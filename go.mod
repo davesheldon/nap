@@ -1,4 +1,4 @@
-module nap
+module github.com/davesheldon/nap
 
 go 1.17
 
