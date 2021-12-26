@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/davesheldon/nap/internal"
+	"nap/internal"
 
 	"github.com/kennygrant/sanitize"
 	"github.com/spf13/cobra"

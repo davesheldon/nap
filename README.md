@@ -7,13 +7,13 @@ Nap is a file-based framework for automating the execution of config-driven HTTP
 ## Using go get
 
 ```bash
-$ go install github.com/davesheldon/nap@latest
+$ go install nap@latest
 ```
 
 ## Building the Source
 
 ```bash
-$ git clone https://github.com/davesheldon/nap.git
+$ git clone https://nap.git
 $ cd nap
 $ go install nap
 ```
