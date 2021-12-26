@@ -1,7 +1,5 @@
 module github.com/davesheldon/nap
 
-replace github.com/davesheldon/nap => ../nap
-
 go 1.17
 
 require (
