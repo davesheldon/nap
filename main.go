@@ -3,7 +3,7 @@ Copyright © 2021 Dave Sheldon <dave@boldcitysoftware.com>
 */
 package main
 
-import "nap/cmd"
+import "github.com/davesheldon/nap/cmd"
 
 func main() {
 	cmd.Execute()
