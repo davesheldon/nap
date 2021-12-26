@@ -64,8 +64,8 @@ verb: GET
 type: request
 body: ""
 headers: {}
-prerequestscript: ""
-postrequestscript: ""
+prerequestscript: ""  # not yet supported
+postrequestscript: ""  # not yet supported
 ```
 
 my-config.yml:
