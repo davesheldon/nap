@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nap/internal"
+	"github.com/davesheldon/nap/internal"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
