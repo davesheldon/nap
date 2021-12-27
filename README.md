@@ -1,6 +1,6 @@
 # Nap
 
-Nap is a file-based framework for automating the execution of config-driven HTTP requests and scripts.
+Nap is a _FAST_, file-based framework for creating and running integration tests over HTTP.
 
 # Installation Options
 
@@ -143,6 +143,8 @@ run:
     - type: routine
       name: my-other-routine
 ```
+
+Subroutines are the fastest way to run many requests. Each subroutine will run within its own goroutine. This allows designing each subroutine as an end-to-end integration test that can run in parallel to other tests. 
 
 ## Running Routines
 
