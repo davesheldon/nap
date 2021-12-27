@@ -1,5 +1,6 @@
 /*
-Copyright © 2021 Dave Sheldon <dave@boldcitysoftware.com>
+Package cmd
+Copyright © 2021 Bold City Software <dave@boldcitysoftware.com>
 */
 package cmd
 
@@ -148,7 +149,7 @@ func executeFile(fileName string, config map[string]string, cmd *cobra.Command) 
 
 	runnableData = []byte(runnableTemplate)
 
-	runnable, err := internal.ParseNapRunnable(runnableData)
+	runnable, err := internal.ParseNapRequest(runnableData)
 
 	if err != nil {
 		return err
@@ -159,7 +160,7 @@ func executeFile(fileName string, config map[string]string, cmd *cobra.Command) 
 	return executeRunnable(runnable, cmd)
 }
 
-func executeRunnable(runnable *internal.NapRunnable, cmd *cobra.Command) error {
+func executeRunnable(runnable *internal.NapRequest, cmd *cobra.Command) error {
 	verbose, _ := cmd.Flags().GetBool("verbose")
 
 	if verbose {

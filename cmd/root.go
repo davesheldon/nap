@@ -1,5 +1,6 @@
 /*
-Copyright © 2021 Dave Sheldon <dave@boldcitysoftware.com>
+Package cmd
+Copyright © 2021 Bold City Software <dave@boldcitysoftware.com>
 */
 package cmd
 

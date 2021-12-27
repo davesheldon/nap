@@ -1,5 +1,6 @@
 /*
-Copyright © 2021 Dave Sheldon <dave@boldcitysoftware.com>
+Package internal
+Copyright © 2021 Bold City Software <dave@boldcitysoftware.com>
 */
 package internal
 
@@ -14,7 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type NapRunnable struct {
+type NapRequest struct {
 	Name              string
 	Path              string
 	Verb              string
@@ -25,29 +26,8 @@ type NapRunnable struct {
 	PostRequestScript string
 }
 
-func NewNapRequest(name string) *NapRunnable {
-	m := new(NapRunnable)
-
-	m.Name = name
-	m.Path = "https://cat-fact.herokuapp.com/facts/"
-	m.Verb = "GET"
-	m.Type = "request"
-	m.Body = ""
-
-	return m
-}
-
-func (r *NapRunnable) ToYaml() ([]byte, error) {
-	d, err := yaml.Marshal(&r)
-	if err != nil {
-		return nil, err
-	}
-
-	return d, nil
-}
-
-func ParseNapRunnable(data []byte) (*NapRunnable, error) {
-	r := NapRunnable{}
+func ParseNapRequest(data []byte) (*NapRequest, error) {
+	r := NapRequest{}
 	err := yaml.Unmarshal(data, &r)
 
 	if err != nil {
@@ -57,7 +37,7 @@ func ParseNapRunnable(data []byte) (*NapRunnable, error) {
 	return &r, nil
 }
 
-func (r *NapRunnable) GetResult() *NapResult {
+func (r *NapRequest) GetResult() *NapResult {
 	result := new(NapResult)
 
 	result.StartTime = time.Now()
@@ -67,7 +47,7 @@ func (r *NapRunnable) GetResult() *NapResult {
 	return result
 }
 
-func (r *NapRunnable) PrintStats() {
+func (r *NapRequest) PrintStats() {
 	fmt.Printf("\n\nRunning: %s\n", r.Name)
 	fmt.Printf("Path: %s\n", r.Path)
 	fmt.Printf("Verb: %s\n", r.Verb)
@@ -81,7 +61,7 @@ func (r *NapRunnable) PrintStats() {
 	}
 }
 
-func (r *NapRunnable) executeHttp() (*http.Response, error) {
+func (r *NapRequest) executeHttp() (*http.Response, error) {
 	client := &http.Client{}
 
 	var content io.Reader
