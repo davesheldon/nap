@@ -183,13 +183,13 @@ func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[
 
 	data = []byte(dataAsString)
 
-	req, err := naprequest.Parse(data)
+	request, err := naprequest.Parse(data)
 
 	if err != nil {
 		return naprequest.ResultError(err)
 	}
 
-	return executeRunnable(req, runConfig)
+	return executeRunnable(request, runConfig)
 }
 
 func executeRunnable(request *naprequest.Request, runConfig *RunConfig) *naprequest.Result {
