@@ -22,11 +22,11 @@ var generateCmd = &cobra.Command{
 	Long:  `The generate command will add a file to the appropriate location using the template for that object type.`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 || (args[0] != "request" && args[0] != "env" && args[0] != "routine") {
-			return errors.New("generate requires a valid type argument. Valid options: request, routine, env")
+			return errors.New("generate requires a valid type argument. valid options: request, routine, env")
 		}
 
 		if len(args) < 2 {
-			return errors.New("generate requires a name")
+			return errors.New(fmt.Sprintf("generate requires a %s name", args[0]))
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type NapResult struct {
+type NapRequestResult struct {
 	Name              string
 	HttpResponse      *http.Response
 	PreRequestResult  string
@@ -19,6 +19,12 @@ type NapResult struct {
 	Error             error
 }
 
-func (r *NapResult) GetElapsedMs() int64 {
+func (r *NapRequestResult) GetElapsedMs() int64 {
 	return r.EndTime.Sub(r.StartTime).Milliseconds()
+}
+
+func NapRequestResultError(err error) *NapRequestResult {
+	result := new(NapRequestResult)
+	result.Error = err
+	return result
 }

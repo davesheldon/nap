@@ -9,10 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kennygrant/sanitize"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/davesheldon/nap/internal"
@@ -23,17 +24,16 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:   "run <target>",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "run <type> <target>",
+	Short: "execute a request or routine",
+	Long:  `The run command executes a request or routine using the name provided.`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("run requires a valid request name.")
+		if len(args) < 1 || (args[0] != "request" && args[0] != "env" && args[0] != "routine") {
+			return errors.New("run requires a valid type argument. valid options: request, routine")
+		}
+
+		if len(args) < 2 {
+			return errors.New(fmt.Sprintf("run requires a %s name", args[0]))
 		}
 
 		return nil
@@ -45,61 +45,74 @@ to quickly create a Cobra application.`,
 			runConfig.printStats()
 		}
 
-		configMap, err := loadConfigMap(runConfig)
+		environmentVariables, err := loadEnvironment(runConfig)
 		if err != nil {
 			return err
 		}
 
-		file, err := os.Open(runConfig.TargetFileName)
-		if err != nil {
-			return err
-		}
+		if runConfig.TargetType == "request" {
+			targetFileName := path.Join("requests", sanitize.BaseName(runConfig.Target))
+			targetFile, err := os.Open(targetFileName)
 
-		defer file.Close()
-
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return err
-		}
-
-		if fileInfo.IsDir() {
-			if runConfig.Verbose {
-				fmt.Printf("Walking directory: %s\n", runConfig.TargetFileName)
+			if err != nil {
+				return err
 			}
 
-			err = filepath.Walk(runConfig.TargetFileName, func(path string, f os.FileInfo, _ error) error {
-				if !f.IsDir() && filepath.Ext(path) == ".yml" {
-					err = executeFile(path, configMap, cmd)
+			defer targetFile.Close()
+
+			result := runRequest(runConfig, targetFileName, environmentVariables)
+
+			if runConfig.Verbose {
+				fmt.Printf("Response Status: %s (Content Length: %d bytes)\n", result.HttpResponse.Status, result.HttpResponse.ContentLength)
+			} else {
+				fmt.Println(result.HttpResponse.Status)
+			}
+
+			if runConfig.Verbose {
+				output, err := readBodyAsString(result.HttpResponse)
+				if err != nil {
+					return err
+				}
+
+				if strings.Contains(result.HttpResponse.Header.Get("Content-Type"), "json") {
+					output, err = jsonPretty(output)
+
 					if err != nil {
 						return err
 					}
 				}
 
-				return nil
-			})
+				print(output)
+			}
 
-			return err
-		} else {
-			return executeFile(runConfig.TargetFileName, configMap, cmd)
+			defer result.HttpResponse.Body.Close()
+
+			return nil
 		}
+
+		if runConfig.TargetType == "routine" {
+			return errors.New("running routines is not yet implemented")
+		}
+
+		return nil
 	},
 }
 
-func loadConfigMap(runConfig *RunConfig) (map[string]string, error) {
+func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 	configMap := make(map[string]string)
 
-	if len(runConfig.ConfigFileName) > 0 {
-		if !strings.HasSuffix(runConfig.ConfigFileName, ".yml") {
-			runConfig.ConfigFileName = runConfig.ConfigFileName + ".yml"
+	if len(runConfig.Environment) > 0 {
+		if !strings.HasSuffix(runConfig.Environment, ".yml") {
+			runConfig.Environment = runConfig.Environment + ".yml"
 		}
 
-		if _, err := os.Stat(runConfig.ConfigFileName); errors.Is(err, os.ErrNotExist) {
-			return configMap, errors.New(fmt.Sprintf("config file name '%s' not found.", runConfig.ConfigFileName))
+		if _, err := os.Stat(runConfig.Environment); errors.Is(err, os.ErrNotExist) {
+			return configMap, errors.New(fmt.Sprintf("config file name '%s' not found.", runConfig.Environment))
 		} else if err != nil {
 			return configMap, err
 		}
 
-		configData, err := os.ReadFile(runConfig.ConfigFileName)
+		configData, err := os.ReadFile(runConfig.Environment)
 		if err != nil {
 			return configMap, err
 		}
@@ -114,91 +127,64 @@ func loadConfigMap(runConfig *RunConfig) (map[string]string, error) {
 }
 
 type RunConfig struct {
-	TargetFileName string
-	ConfigFileName string
-	Verbose        bool
+	TargetType  string
+	Target      string
+	Environment string
+	Verbose     bool
 }
 
 func (c *RunConfig) printStats() {
-	fmt.Printf("Target File Name: %s\n", c.TargetFileName)
-	fmt.Printf("Config File Name: %s\n", c.ConfigFileName)
+	fmt.Printf("Target Type: %s\n", c.TargetType)
+	fmt.Printf("Target: %s\n", c.Target)
+	fmt.Printf("Environment: %s\n", c.Environment)
 	fmt.Printf("Verbose Mode: %t\n", c.Verbose)
 }
 
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config := new(RunConfig)
-	config.TargetFileName = args[0]
-	config.ConfigFileName, _ = cmd.Flags().GetString("config")
+	config.TargetType = args[0]
+	config.Target = args[1]
+	config.Environment, _ = cmd.Flags().GetString("env")
+
+	if len(config.Environment) == 0 {
+		config.Environment = "default"
+	}
+
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
 	return config
 }
 
-func executeFile(fileName string, config map[string]string, cmd *cobra.Command) error {
-	runnableData, err := os.ReadFile(fileName)
+func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[string]string) *internal.NapRequestResult {
+	data, err := os.ReadFile(fileName)
 
 	if err != nil {
-		return err
+		return internal.NapRequestResultError(err)
 	}
 
-	runnableTemplate := string(runnableData)
+	dataAsString := string(data)
 
-	for k, v := range config {
+	for k, v := range environmentVariables {
 		variable := fmt.Sprintf("${%s}", k)
-		runnableTemplate = strings.ReplaceAll(runnableTemplate, variable, v)
+		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
 	}
 
-	runnableData = []byte(runnableTemplate)
+	data = []byte(dataAsString)
 
-	runnable, err := internal.ParseNapRequest(runnableData)
+	request, err := internal.ParseNapRequest(data)
 
 	if err != nil {
-		return err
+		return internal.NapRequestResultError(err)
 	}
 
-	fmt.Printf("- %s: ", fileName)
-
-	return executeRunnable(runnable, cmd)
+	return executeRunnable(request, runConfig)
 }
 
-func executeRunnable(runnable *internal.NapRequest, cmd *cobra.Command) error {
-	verbose, _ := cmd.Flags().GetBool("verbose")
-
-	if verbose {
-		runnable.PrintStats()
+func executeRunnable(request *internal.NapRequest, runConfig *RunConfig) *internal.NapRequestResult {
+	if runConfig.Verbose {
+		request.PrintStats()
 	}
 
-	result := runnable.GetResult()
-
-	if result.Error != nil {
-		return result.Error
-	}
-
-	if verbose {
-		fmt.Printf("Response Status: %s (Content Length: %d bytes)\n", result.HttpResponse.Status, result.HttpResponse.ContentLength)
-	} else {
-		fmt.Println(result.HttpResponse.Status)
-	}
-
-	if verbose {
-		output, err := readBodyAsString(result.HttpResponse)
-		if err != nil {
-			return err
-		}
-
-		if strings.Contains(result.HttpResponse.Header.Get("Content-Type"), "json") {
-			output, err = jsonPretty(output)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		print(output)
-	}
-
-	defer result.HttpResponse.Body.Close()
-
-	return nil
+	return request.GetResult()
 }
 
 func readBodyAsString(httpResponse *http.Response) (string, error) {
@@ -221,5 +207,5 @@ func jsonPretty(str string) (string, error) {
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().StringP("config", "c", "", "Path to an external configuration file.")
+	runCmd.Flags().StringP("env", "e", "", "name of the environment variable set to use")
 }

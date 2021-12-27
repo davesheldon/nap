@@ -37,8 +37,8 @@ func ParseNapRequest(data []byte) (*NapRequest, error) {
 	return &r, nil
 }
 
-func (r *NapRequest) GetResult() *NapResult {
-	result := new(NapResult)
+func (r *NapRequest) GetResult() *NapRequestResult {
+	result := new(NapRequestResult)
 
 	result.StartTime = time.Now()
 	result.HttpResponse, result.Error = r.executeHttp()

@@ -19,6 +19,13 @@ var newCmd = &cobra.Command{
 	Use:   "new <project-name>",
 	Short: "Create a new project",
 	Long:  `The new command creates a new Nap project in a folder named after project name`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("new requires a project name")
+		}
+
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		projectName := args[0]
 		projectPath := sanitize.BaseName(projectName)
