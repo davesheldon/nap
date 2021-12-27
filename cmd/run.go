@@ -29,7 +29,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/davesheldon/nap/internal"
+	"github.com/davesheldon/nap/naprequest"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -167,11 +167,11 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	return config
 }
 
-func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[string]string) *internal.NapRequestResult {
+func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[string]string) *naprequest.Result {
 	data, err := os.ReadFile(fileName)
 
 	if err != nil {
-		return internal.NapRequestResultError(err)
+		return naprequest.ResultError(err)
 	}
 
 	dataAsString := string(data)
@@ -183,16 +183,16 @@ func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[
 
 	data = []byte(dataAsString)
 
-	request, err := internal.ParseNapRequest(data)
+	req, err := naprequest.Parse(data)
 
 	if err != nil {
-		return internal.NapRequestResultError(err)
+		return naprequest.ResultError(err)
 	}
 
-	return executeRunnable(request, runConfig)
+	return executeRunnable(req, runConfig)
 }
 
-func executeRunnable(request *internal.NapRequest, runConfig *RunConfig) *internal.NapRequestResult {
+func executeRunnable(request *naprequest.Request, runConfig *RunConfig) *naprequest.Result {
 	if runConfig.Verbose {
 		request.PrintStats()
 	}

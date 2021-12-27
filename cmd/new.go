@@ -98,7 +98,7 @@ headers:
 		firstRoutineData := []byte(`name: routine-1
 run:
     - type: request 
-      name: my-request
+      name: request-1
       expectStatusCode: 200`)
 		if err := tryWriteFileData(path.Join(projectPath, "routines", "routine-1.yml"), firstRoutineData); err != nil {
 			return err

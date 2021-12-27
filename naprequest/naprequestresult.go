@@ -12,15 +12,17 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+naprequestresult.go - this data structure represents the results of an executed Nap request
 */
-package internal
+package naprequest
 
 import (
 	"net/http"
 	"time"
 )
 
-type NapRequestResult struct {
+type Result struct {
 	Name              string
 	HttpResponse      *http.Response
 	PreRequestResult  string
@@ -30,12 +32,12 @@ type NapRequestResult struct {
 	Error             error
 }
 
-func (r *NapRequestResult) GetElapsedMs() int64 {
+func (r *Result) GetElapsedMs() int64 {
 	return r.EndTime.Sub(r.StartTime).Milliseconds()
 }
 
-func NapRequestResultError(err error) *NapRequestResult {
-	result := new(NapRequestResult)
+func ResultError(err error) *Result {
+	result := new(Result)
 	result.Error = err
 	return result
 }

@@ -12,8 +12,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+naprequest.go - this data structure represents a runnable HTTP request
 */
-package internal
+package naprequest
 
 import (
 	"bytes"
@@ -26,7 +28,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type NapRequest struct {
+type Request struct {
 	Name              string
 	Path              string
 	Verb              string
@@ -37,8 +39,8 @@ type NapRequest struct {
 	PostRequestScript string
 }
 
-func ParseNapRequest(data []byte) (*NapRequest, error) {
-	r := NapRequest{}
+func Parse(data []byte) (*Request, error) {
+	r := Request{}
 	err := yaml.Unmarshal(data, &r)
 
 	if err != nil {
@@ -48,8 +50,8 @@ func ParseNapRequest(data []byte) (*NapRequest, error) {
 	return &r, nil
 }
 
-func (r *NapRequest) GetResult() *NapRequestResult {
-	result := new(NapRequestResult)
+func (r *Request) GetResult() *Result {
+	result := new(Result)
 
 	result.StartTime = time.Now()
 	result.HttpResponse, result.Error = r.executeHttp()
@@ -58,7 +60,7 @@ func (r *NapRequest) GetResult() *NapRequestResult {
 	return result
 }
 
-func (r *NapRequest) PrintStats() {
+func (r *Request) PrintStats() {
 	fmt.Printf("\n\nRunning: %s\n", r.Name)
 	fmt.Printf("Path: %s\n", r.Path)
 	fmt.Printf("Verb: %s\n", r.Verb)
@@ -72,7 +74,7 @@ func (r *NapRequest) PrintStats() {
 	}
 }
 
-func (r *NapRequest) executeHttp() (*http.Response, error) {
+func (r *Request) executeHttp() (*http.Response, error) {
 	client := &http.Client{}
 
 	var content io.Reader
