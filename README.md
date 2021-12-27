@@ -83,7 +83,7 @@ run:
 
 ## Expectations
 
-An **expectations** defines an attribute to be tested after the request is executed. Nap supports several ways to help determine whether a request meets expectations or not:
+An **expectation** defines an attribute to be tested after the request is executed. Nap supports several ways to help determine whether a request meets expectations or not:
 
 ### Status Code Expectation
 
