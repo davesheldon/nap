@@ -20,8 +20,11 @@ package naprequest
 import (
 	"bytes"
 	"fmt"
+	"github.com/kennygrant/sanitize"
 	"io"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -39,7 +42,7 @@ type Request struct {
 	PostRequestScript string
 }
 
-func Parse(data []byte) (*Request, error) {
+func parse(data []byte) (*Request, error) {
 	r := Request{}
 	err := yaml.Unmarshal(data, &r)
 
@@ -50,8 +53,29 @@ func Parse(data []byte) (*Request, error) {
 	return &r, nil
 }
 
-func (r *Request) GetResult() *Result {
-	result := new(Result)
+func LoadByName(name string, environmentVariables map[string]string) (*Request, error) {
+	fileName := path.Join("requests", sanitize.BaseName(name)+".yml")
+
+	data, err := os.ReadFile(fileName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dataAsString := string(data)
+
+	for k, v := range environmentVariables {
+		variable := fmt.Sprintf("${%s}", k)
+		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
+	}
+
+	data = []byte(dataAsString)
+
+	return parse(data)
+}
+
+func (r *Request) Run() *RequestResult {
+	result := new(RequestResult)
 
 	result.StartTime = time.Now()
 	result.HttpResponse, result.Error = r.executeHttp()

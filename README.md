@@ -73,7 +73,7 @@ By default, this creates a YAML file inside the `routines` folder like the follo
 
 ```yml
 name: my-routine
-run:
+steps:
     - type: request 
       name: my-request
       expectStatusCode: 200
@@ -137,7 +137,7 @@ The **JSON** expectation will test specific parts of a JSON-encoded response obj
 To work with multiple routines, use the subroutine pattern:
 
 ```yml
-run:
+steps:
     - type: routine
       name: my-routine
     - type: routine

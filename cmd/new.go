@@ -62,15 +62,15 @@ path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
 headers:
-    - Accept: application/json
-	- Content-Type: application/json
+  Accept: application/json
+  Content-Type: application/json
 `)
 		if err := tryWriteFileData(path.Join(projectPath, ".template", "request.yml"), requestTemplateData); err != nil {
 			return err
 		}
 
 		routineTemplateData := []byte(`name: ${name}
-run:
+steps:
   - type: request
     name: 
 `)
@@ -88,18 +88,18 @@ path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
 headers:
-    - Accept: application/json
-	- Content-Type: application/json
+  Accept: application/json
+  Content-Type: application/json
 `)
 		if err := tryWriteFileData(path.Join(projectPath, "requests", "request-1.yml"), firstRequestData); err != nil {
 			return err
 		}
 
 		firstRoutineData := []byte(`name: routine-1
-run:
-    - type: request 
-      name: request-1
-      expectStatusCode: 200`)
+steps:
+  - type: request 
+    name: request-1
+    expectStatusCode: 200`)
 		if err := tryWriteFileData(path.Join(projectPath, "routines", "routine-1.yml"), firstRoutineData); err != nil {
 			return err
 		}
@@ -111,8 +111,6 @@ run:
 }
 
 func tryWriteFileData(filePath string, data []byte) error {
-	fmt.Println("in tryWriteFileData")
-
 	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
 		return os.WriteFile(filePath, data, os.ModePerm)
 	}

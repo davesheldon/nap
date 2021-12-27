@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-type Result struct {
+type RequestResult struct {
 	Name              string
 	HttpResponse      *http.Response
 	PreRequestResult  string
@@ -32,12 +32,12 @@ type Result struct {
 	Error             error
 }
 
-func (r *Result) GetElapsedMs() int64 {
+func (r *RequestResult) GetElapsedMs() int64 {
 	return r.EndTime.Sub(r.StartTime).Milliseconds()
 }
 
-func ResultError(err error) *Result {
-	result := new(Result)
+func ResultError(err error) *RequestResult {
+	result := new(RequestResult)
 	result.Error = err
 	return result
 }

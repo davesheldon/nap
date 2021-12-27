@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kennygrant/sanitize"
+	"github.com/davesheldon/nap/naproutine"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -64,16 +64,7 @@ var runCmd = &cobra.Command{
 		}
 
 		if runConfig.TargetType == "request" {
-			targetFileName := path.Join("requests", sanitize.BaseName(runConfig.Target))
-			targetFile, err := os.Open(targetFileName)
-
-			if err != nil {
-				return err
-			}
-
-			defer targetFile.Close()
-
-			result := runRequest(runConfig, targetFileName, environmentVariables)
+			result := runRequest(runConfig, environmentVariables)
 
 			if runConfig.Verbose {
 				fmt.Printf("Response Status: %s (Content Length: %d bytes)\n", result.HttpResponse.Status, result.HttpResponse.ContentLength)
@@ -104,7 +95,18 @@ var runCmd = &cobra.Command{
 		}
 
 		if runConfig.TargetType == "routine" {
-			return errors.New("running routines is not yet implemented")
+			routine, err := naproutine.LoadByName(runConfig.Target, environmentVariables)
+			if err != nil {
+				return err
+			}
+
+			routineResult := routine.Run(environmentVariables, nil, nil)
+
+			if routineResult.Error != nil {
+				return routineResult.Error
+			}
+
+			routineResult.Print("")
 		}
 
 		return nil
@@ -112,31 +114,29 @@ var runCmd = &cobra.Command{
 }
 
 func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
-	configMap := make(map[string]string)
+	environmentVariables := make(map[string]string)
 
 	if len(runConfig.Environment) > 0 {
-		if !strings.HasSuffix(runConfig.Environment, ".yml") {
-			runConfig.Environment = runConfig.Environment + ".yml"
-		}
+		environmentFileName := path.Join("env", runConfig.Environment+".yml")
 
-		if _, err := os.Stat(runConfig.Environment); errors.Is(err, os.ErrNotExist) {
-			return configMap, errors.New(fmt.Sprintf("config file name '%s' not found.", runConfig.Environment))
+		if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
+			return environmentVariables, errors.New(fmt.Sprintf("environment '%s' not found.", runConfig.Environment))
 		} else if err != nil {
-			return configMap, err
+			return environmentVariables, err
 		}
 
-		configData, err := os.ReadFile(runConfig.Environment)
+		configData, err := os.ReadFile(environmentFileName)
 		if err != nil {
-			return configMap, err
+			return environmentVariables, err
 		}
 
-		err = yaml.Unmarshal(configData, &configMap)
+		err = yaml.Unmarshal(configData, &environmentVariables)
 		if err != nil {
-			return configMap, err
+			return environmentVariables, err
 		}
 	}
 
-	return configMap, nil
+	return environmentVariables, nil
 }
 
 type RunConfig struct {
@@ -167,37 +167,18 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	return config
 }
 
-func runRequest(runConfig *RunConfig, fileName string, environmentVariables map[string]string) *naprequest.Result {
-	data, err := os.ReadFile(fileName)
+func runRequest(runConfig *RunConfig, environmentVariables map[string]string) *naprequest.RequestResult {
+	request, err := naprequest.LoadByName(runConfig.Target, environmentVariables)
 
 	if err != nil {
 		return naprequest.ResultError(err)
 	}
 
-	dataAsString := string(data)
-
-	for k, v := range environmentVariables {
-		variable := fmt.Sprintf("${%s}", k)
-		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
-	}
-
-	data = []byte(dataAsString)
-
-	request, err := naprequest.Parse(data)
-
-	if err != nil {
-		return naprequest.ResultError(err)
-	}
-
-	return executeRunnable(request, runConfig)
-}
-
-func executeRunnable(request *naprequest.Request, runConfig *RunConfig) *naprequest.Result {
 	if runConfig.Verbose {
 		request.PrintStats()
 	}
 
-	return request.GetResult()
+	return request.Run()
 }
 
 func readBodyAsString(httpResponse *http.Response) (string, error) {
