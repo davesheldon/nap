@@ -58,7 +58,7 @@ func (result *RoutineResult) IsPassing() bool {
 }
 
 func (result *RoutineResult) Print(prefix string) {
-	fmt.Printf("%sRoutine: %s, IsPassing: %t\n", prefix, result.Name, result.IsPassing())
+	fmt.Printf("%sRoutine: %s, ElapsedMs: %d, IsPassing: %t\n", prefix, result.Name, result.GetElapsedMs(), result.IsPassing())
 
 	for i, s := range result.StepResults {
 		s.print(i, prefix)
