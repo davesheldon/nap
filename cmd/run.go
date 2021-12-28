@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/davesheldon/nap/naproutine"
+	"github.com/robertkrimen/otto"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -65,6 +66,10 @@ var runCmd = &cobra.Command{
 
 		if runConfig.TargetType == "request" {
 			result := runRequest(runConfig, environmentVariables)
+
+			if result.Error != nil {
+				return result.Error
+			}
 
 			if runConfig.Verbose {
 				fmt.Printf("Response Status: %s (Content Length: %d bytes)\n", result.HttpResponse.Status, result.HttpResponse.ContentLength)
@@ -167,8 +172,18 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	return config
 }
 
+var ran bool
+
 func runRequest(runConfig *RunConfig, environmentVariables map[string]string) *naprequest.RequestResult {
 	request, err := naprequest.LoadByName(runConfig.Target, environmentVariables)
+
+	if err != nil {
+		return naprequest.ResultError(err)
+	}
+
+	vm, err := setupVm(runConfig, environmentVariables)
+
+	vm.Run(`console.log('vm ready')`)
 
 	if err != nil {
 		return naprequest.ResultError(err)
@@ -178,7 +193,59 @@ func runRequest(runConfig *RunConfig, environmentVariables map[string]string) *n
 		request.PrintStats()
 	}
 
-	return request.Run()
+	result := request.Run()
+
+	return result
+}
+
+func setupVm(runConfig *RunConfig, environmentVariables map[string]string) (*otto.Otto, error) {
+	vm := otto.New()
+
+	err := vm.Set("runRequest", func(call otto.FunctionCall) otto.Value {
+		scriptConfig := new(RunConfig)
+		scriptConfig.Target = call.Argument(0).String()
+		scriptConfig.Environment = runConfig.Environment
+		scriptConfig.Verbose = runConfig.Verbose
+		scriptConfig.TargetType = "request"
+
+		runRequest(scriptConfig, environmentVariables)
+
+		return otto.Value{}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Set("setEnv", func(call otto.FunctionCall) otto.Value {
+		environmentVariables[call.Argument(0).String()] = call.Argument(1).String()
+
+		return otto.Value{}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Set("getEnv", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(environmentVariables[call.Argument(0).String()])
+		return result
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = vm.Run(`var nap = { env: { get: getEnv, set: setEnv }, run: { request: runRequest } };
+getEnv = undefined;
+setEnv = undefined;
+runRequest = undefined;`)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
 }
 
 func readBodyAsString(httpResponse *http.Response) (string, error) {
