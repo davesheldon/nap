@@ -172,8 +172,6 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	return config
 }
 
-var ran bool
-
 func runRequest(runConfig *RunConfig, environmentVariables map[string]string) *naprequest.RequestResult {
 	request, err := naprequest.LoadByName(runConfig.Target, environmentVariables)
 
@@ -213,6 +211,24 @@ func setupVm(runConfig *RunConfig, environmentVariables map[string]string) (*ott
 		return otto.Value{}
 	})
 
+	err = vm.Set("runRoutine", func(call otto.FunctionCall) otto.Value {
+		scriptConfig := new(RunConfig)
+		scriptConfig.Target = call.Argument(0).String()
+		scriptConfig.Environment = runConfig.Environment
+		scriptConfig.Verbose = runConfig.Verbose
+		scriptConfig.TargetType = "routine"
+
+		routine, _ := naproutine.LoadByName(runConfig.Target, environmentVariables)
+
+		routineResult := routine.Run(environmentVariables, nil, nil)
+
+		if routineResult.Error == nil {
+			routineResult.Print("")
+		}
+
+		return otto.Value{}
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -236,10 +252,22 @@ func setupVm(runConfig *RunConfig, environmentVariables map[string]string) (*ott
 		return nil, err
 	}
 
-	_, err = vm.Run(`var nap = { env: { get: getEnv, set: setEnv }, run: { request: runRequest } };
+	_, err = vm.Run(`
+var nap = { 
+	env: { 
+		get: getEnv, 
+		set: setEnv 
+	}, 
+	run: { 
+		request: runRequest,
+		routine: runRoutine 
+	} 
+};
+
 getEnv = undefined;
 setEnv = undefined;
-runRequest = undefined;`)
+runRequest = undefined;
+runRoutine = undefined;`)
 
 	if err != nil {
 		return nil, err
