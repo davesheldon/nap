@@ -48,7 +48,7 @@ var newCmd = &cobra.Command{
 			return err
 		}
 
-		subdirectoriesToCreate := []string{"requests", "routines", "env", ".template"}
+		subdirectoriesToCreate := []string{".templates", "env", "requests", "routines", "scripts"}
 
 		for _, subdirectory := range subdirectoriesToCreate {
 			fullPath := path.Join(projectPath, subdirectory)
@@ -58,24 +58,22 @@ var newCmd = &cobra.Command{
 			}
 		}
 
-		requestTemplateData := []byte(`name: ${name}
-path: https://cat-fact.herokuapp.com/facts
+		requestTemplateData := []byte(`path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
 headers:
   Accept: application/json
   Content-Type: application/json
 `)
-		if err := tryWriteFileData(path.Join(projectPath, ".template", "request.yml"), requestTemplateData); err != nil {
+		if err := tryWriteFileData(path.Join(projectPath, ".templates", "request.yml"), requestTemplateData); err != nil {
 			return err
 		}
 
-		routineTemplateData := []byte(`name: ${name}
-steps:
+		routineTemplateData := []byte(`steps:
   - type: request
     name: 
 `)
-		if err := tryWriteFileData(path.Join(projectPath, ".template", "routine.yml"), routineTemplateData); err != nil {
+		if err := tryWriteFileData(path.Join(projectPath, ".templates", "routine.yml"), routineTemplateData); err != nil {
 			return err
 		}
 
@@ -84,7 +82,7 @@ steps:
 			return err
 		}
 
-		firstRequestData := []byte(`name: request-1
+		firstRequestData := []byte(`type: request
 path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
@@ -96,11 +94,9 @@ headers:
 			return err
 		}
 
-		firstRoutineData := []byte(`name: routine-1
+		firstRoutineData := []byte(`type: routine
 steps:
-  - type: request 
-    name: request-1
-    expectStatusCode: 200`)
+  - run: ../requests/request-1.yml`)
 		if err := tryWriteFileData(path.Join(projectPath, "routines", "routine-1.yml"), firstRoutineData); err != nil {
 			return err
 		}
