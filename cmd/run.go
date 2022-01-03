@@ -22,13 +22,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/davesheldon/nap/naproutine"
-	"github.com/robertkrimen/otto"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/davesheldon/nap/naproutine"
+	"github.com/robertkrimen/otto"
 
 	"github.com/davesheldon/nap/naprequest"
 
@@ -41,18 +42,12 @@ var runCmd = &cobra.Command{
 	Use:   "run <type> <target>",
 	Short: "execute a request or routine",
 	Long:  `The run command executes a request or routine using the name provided.`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 || (args[0] != "request" && args[0] != "env" && args[0] != "routine") {
-			return errors.New("run requires a valid type argument. valid options: request, routine")
-		}
-
-		if len(args) < 2 {
-			return errors.New(fmt.Sprintf("run requires a %s name", args[0]))
-		}
-
-		return nil
-	},
+	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if !containsString(supportedComponentTypes, args[0]) {
+			return fmt.Errorf("generate requires a valid type argument. valid options: %s", strings.Join(supportedComponentTypes, ", "))
+		}
+
 		runConfig := newRunConfig(cmd, args)
 
 		if runConfig.Verbose {
@@ -125,7 +120,7 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 		environmentFileName := path.Join("env", runConfig.Environment+".yml")
 
 		if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
-			return environmentVariables, errors.New(fmt.Sprintf("environment '%s' not found.", runConfig.Environment))
+			return environmentVariables, fmt.Errorf("environment '%s' not found", runConfig.Environment)
 		} else if err != nil {
 			return environmentVariables, err
 		}
@@ -210,6 +205,10 @@ func setupVm(runConfig *RunConfig, environmentVariables map[string]string) (*ott
 
 		return otto.Value{}
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	err = vm.Set("runRoutine", func(call otto.FunctionCall) otto.Value {
 		scriptConfig := new(RunConfig)

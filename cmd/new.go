@@ -20,9 +20,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/kennygrant/sanitize"
 	"os"
 	"path"
+
+	"github.com/kennygrant/sanitize"
 
 	"github.com/spf13/cobra"
 )
@@ -115,7 +116,7 @@ func tryWriteFileData(filePath string, data []byte) error {
 		return os.WriteFile(filePath, data, os.ModePerm)
 	}
 
-	return errors.New(fmt.Sprintf("could not create %s. either a file already exists or the path isn't accessible", filePath))
+	return fmt.Errorf("could not create %s. either a file already exists or the path isn't accessible", filePath)
 }
 
 func ensureDirectoryExists(directoryPath string) error {
@@ -124,7 +125,7 @@ func ensureDirectoryExists(directoryPath string) error {
 	if errors.Is(err, os.ErrNotExist) {
 		os.Mkdir(directoryPath, os.ModePerm)
 	} else if !projectPathInfo.IsDir() {
-		return errors.New(fmt.Sprintf("path exists and is not a directory (path: %s)", directoryPath))
+		return fmt.Errorf("path exists and is not a directory (path: %s)", directoryPath)
 	}
 
 	return nil

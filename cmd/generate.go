@@ -28,31 +28,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var supportedComponentTypes = []string{"request", "routine", "env", "script"}
+
+func containsString(slice []string, value string) bool {
+	for _, s := range slice {
+		if s == value {
+			return true
+		}
+	}
+
+	return false
+}
+
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:   "generate <type> <name>",
-	Short: "Generate a new object",
+	Use:   "generate <type> <target>",
+	Short: "Generate a new component",
 	Long:  `The generate command will add a file to the appropriate location using the template for that object type.`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 || (args[0] != "request" && args[0] != "env" && args[0] != "routine") {
-			return errors.New("generate requires a valid type argument. valid options: request, routine, env")
-		}
-
-		if len(args) < 2 {
-			return errors.New(fmt.Sprintf("generate requires a %s name", args[0]))
-		}
-
-		return nil
-	},
+	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var objectType = args[0]
-		var objectName = args[1]
+		if !containsString(supportedComponentTypes, args[0]) {
+			return fmt.Errorf("generate requires a valid type argument. valid options: %s", strings.Join(supportedComponentTypes, ", "))
+		}
 
-		filePath := getFilePath(objectType, objectName)
+		var componentType = args[0]
+		var componentName = args[1]
+
+		filePath := getFilePath(componentType, componentName)
 
 		if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
 
-			data, err := getTemplateData(objectType, objectName)
+			data, err := getTemplateData(componentType, componentName)
 			if err != nil {
 				return err
 			}
@@ -62,50 +68,69 @@ var generateCmd = &cobra.Command{
 				return err
 			}
 
-			fmt.Printf("created %s %s (path: %s)", objectType, objectName, filePath)
+			fmt.Printf("created %s %s (path: %s)", componentType, componentName, filePath)
 		} else {
-			return errors.New(fmt.Sprintf("unable to create %s %s. file already exists (path: %s)", objectType, objectName, filePath))
+			return fmt.Errorf("unable to create %s %s. file already exists (path: %s)", componentType, componentName, filePath)
 		}
 
 		return nil
 	},
 }
 
-func getFilePath(objectType string, objectName string) string {
-	var folder string
+func getFilePath(componentType string, componentName string) string {
+	folder := getComponentFolder(componentType)
+	extension := getComponentExtension(componentType)
 
-	fileName := sanitize.Name(objectName) + ".yml"
-
-	switch objectType {
-	case "request":
-		folder = "requests"
-		break
-	case "routine":
-		folder = "routines"
-		break
-	case "env":
-		folder = "environment"
-		break
-	}
+	fileName := sanitize.Name(componentName) + extension
 
 	return path.Join(folder, fileName)
 }
 
-func getTemplateData(objectType string, objectName string) ([]byte, error) {
-	templatePath := fmt.Sprintf(".templates/%s", objectType)
+func getComponentFolder(componentType string) string {
+	switch componentType {
+	case "request":
+		return "requests"
+	case "routine":
+		return "routines"
+	case "env":
+		return "env"
+	case "script":
+		return "scripts"
+	}
+
+	return ""
+}
+
+func getComponentExtension(componentType string) string {
+	switch componentType {
+	case "request":
+		return ".yml"
+	case "routine":
+		return ".yml"
+	case "env":
+		return ".yml"
+	case "script":
+		return ".js"
+	}
+
+	return ""
+}
+
+func getTemplateData(componentType string, componentName string) ([]byte, error) {
+	templatePath := fmt.Sprintf(".templates/%s%s", componentType, getComponentExtension(componentType))
 	if _, err := os.Stat(templatePath); errors.Is(err, os.ErrNotExist) {
-		return nil, errors.New(fmt.Sprintf("Could not find project %s template (looked in %s)", objectType, templatePath))
+		return nil, fmt.Errorf("could not find project %s template (looked in %s)", componentType, templatePath)
 	} else if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error opening project %s template (path: %s)", objectType, templatePath))
+		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
 	}
 
 	data, err := os.ReadFile(templatePath)
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error opening project %s template (path: %s)", objectType, templatePath))
+		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
 	}
 
-	data = []byte(strings.ReplaceAll(string(data), "${name}", objectName))
+	data = []byte(strings.ReplaceAll(string(data), "${name}", componentName))
 
 	return data, nil
 }
