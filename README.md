@@ -119,8 +119,8 @@ $ nap generate env env/my-env.yml
 To run a request with a particular set of environment variables, use the `run` command with the `--env` or `-e` flag:
 
 ```bash
-$ nap run request my-request -e my-env
-- my-request.yml: 200 OK
+$ nap run requests/my-request.yml -e env/my-env.yml
+- requests/my-request.yml: 200 OK
 ```
 
 # Scripts
