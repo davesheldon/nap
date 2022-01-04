@@ -125,7 +125,7 @@ $ nap run request my-request -e my-env
 
 # Scripts
 
-A **script** is a file containnig ES6-compatible Javascript. Nap supports ES6 Javascript via the [Otto](https://github.com/robertkrimen/otto) library, which means the same [limitations](https://github.com/robertkrimen/otto) are in play as mentioned on the Otto project page.
+A **script** is a file containing [ES6-compatible](https://www.w3schools.com/js/js_es6.asp) Javascript. Nap supports ES6 Javascript via the [Otto](https://github.com/robertkrimen/otto) library, which means the same [limitations](https://github.com/robertkrimen/otto) are in play as mentioned on the Otto project page.
 
 Scripts can be run before or after a request:
 
