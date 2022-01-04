@@ -164,7 +164,7 @@ Nap provides several built-in functions for scripts to use. These are all nested
 | Function | Description |
 |-|-|
 | nap.env.get(key: string) | Returns the value of an environment variable |
-| nap.env.set(key: string, value: string) | Sets the value of an environment variable (**note:** does not update the environment file on disk) |
+| nap.env.set(key: string, value: string) | Sets the (in-memory) value of an environment variable |
 | nap.run(path) | Locates the referenced file, resolves its type and runs it |
 | nap.fail(message: string) | Trigger a failure with a message; abort the rest of the routine |
 
