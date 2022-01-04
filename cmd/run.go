@@ -32,6 +32,8 @@ import (
 	"github.com/robertkrimen/otto"
 
 	"github.com/davesheldon/nap/naprequest"
+	"github.com/davesheldon/nap/napcontext"
+	"github.com/davesheldon/nap/naprunner"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -39,15 +41,11 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:   "run <type> <target>",
-	Short: "execute a request or routine",
-	Long:  `The run command executes a request or routine using the name provided.`,
-	Args:  cobra.MinimumNArgs(2),
+	Use:   "run <target>",
+	Short: "executes the target",
+	Long:  `The run command executes the request, routine or script at the path provided.`,
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if !containsString(supportedComponentTypes, args[0]) {
-			return fmt.Errorf("generate requires a valid type argument. valid options: %s", strings.Join(supportedComponentTypes, ", "))
-		}
-
 		runConfig := newRunConfig(cmd, args)
 
 		if runConfig.Verbose {
@@ -59,55 +57,18 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		if runConfig.TargetType == "request" {
-			result := runRequest(runConfig, environmentVariables)
-
-			if result.Error != nil {
-				return result.Error
-			}
-
-			if runConfig.Verbose {
-				fmt.Printf("Response Status: %s (Content Length: %d bytes)\n", result.HttpResponse.Status, result.HttpResponse.ContentLength)
-			} else {
-				fmt.Println(result.HttpResponse.Status)
-			}
-
-			if runConfig.Verbose {
-				output, err := readBodyAsString(result.HttpResponse)
-				if err != nil {
-					return err
-				}
-
-				if strings.Contains(result.HttpResponse.Header.Get("Content-Type"), "json") {
-					output, err = jsonPretty(output)
-
-					if err != nil {
-						return err
-					}
-				}
-
-				print(output)
-			}
-
-			defer result.HttpResponse.Body.Close()
-
-			return nil
+		ctx, err := napcontext.New(environmentVariables)
+		if err != nil {
+			return err
 		}
 
-		if runConfig.TargetType == "routine" {
-			routine, err := naproutine.LoadByName(runConfig.Target, environmentVariables)
-			if err != nil {
-				return err
-			}
+		routineResult := naprunner.RunPath(ctx, runConfig.Target)
 
-			routineResult := routine.Run(environmentVariables, nil, nil)
-
-			if routineResult.Error != nil {
-				return routineResult.Error
-			}
-
-			routineResult.Print("")
+		if routineResult.Error != nil {
+			return routineResult.Error
 		}
+
+		routineResult.Print("")
 
 		return nil
 	},
@@ -140,14 +101,12 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 }
 
 type RunConfig struct {
-	TargetType  string
 	Target      string
 	Environment string
 	Verbose     bool
 }
 
 func (c *RunConfig) printStats() {
-	fmt.Printf("Target Type: %s\n", c.TargetType)
 	fmt.Printf("Target: %s\n", c.Target)
 	fmt.Printf("Environment: %s\n", c.Environment)
 	fmt.Printf("Verbose Mode: %t\n", c.Verbose)
@@ -155,7 +114,6 @@ func (c *RunConfig) printStats() {
 
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config := new(RunConfig)
-	config.TargetType = args[0]
 	config.Target = args[1]
 	config.Environment, _ = cmd.Flags().GetString("env")
 
@@ -165,114 +123,6 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
 	return config
-}
-
-func runRequest(runConfig *RunConfig, environmentVariables map[string]string) *naprequest.RequestResult {
-	request, err := naprequest.LoadByName(runConfig.Target, environmentVariables)
-
-	if err != nil {
-		return naprequest.ResultError(err)
-	}
-
-	vm, err := setupVm(runConfig, environmentVariables)
-
-	vm.Run(`console.log('vm ready')`)
-
-	if err != nil {
-		return naprequest.ResultError(err)
-	}
-
-	if runConfig.Verbose {
-		request.PrintStats()
-	}
-
-	result := request.Run()
-
-	return result
-}
-
-func setupVm(runConfig *RunConfig, environmentVariables map[string]string) (*otto.Otto, error) {
-	vm := otto.New()
-
-	err := vm.Set("runRequest", func(call otto.FunctionCall) otto.Value {
-		scriptConfig := new(RunConfig)
-		scriptConfig.Target = call.Argument(0).String()
-		scriptConfig.Environment = runConfig.Environment
-		scriptConfig.Verbose = runConfig.Verbose
-		scriptConfig.TargetType = "request"
-
-		runRequest(scriptConfig, environmentVariables)
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("runRoutine", func(call otto.FunctionCall) otto.Value {
-		scriptConfig := new(RunConfig)
-		scriptConfig.Target = call.Argument(0).String()
-		scriptConfig.Environment = runConfig.Environment
-		scriptConfig.Verbose = runConfig.Verbose
-		scriptConfig.TargetType = "routine"
-
-		routine, _ := naproutine.LoadByName(runConfig.Target, environmentVariables)
-
-		routineResult := routine.Run(environmentVariables, nil, nil)
-
-		if routineResult.Error == nil {
-			routineResult.Print("")
-		}
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("setEnv", func(call otto.FunctionCall) otto.Value {
-		environmentVariables[call.Argument(0).String()] = call.Argument(1).String()
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("getEnv", func(call otto.FunctionCall) otto.Value {
-		result, _ := vm.ToValue(environmentVariables[call.Argument(0).String()])
-		return result
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = vm.Run(`
-var nap = { 
-	env: { 
-		get: getEnv, 
-		set: setEnv 
-	}, 
-	run: { 
-		request: runRequest,
-		routine: runRoutine 
-	} 
-};
-
-getEnv = undefined;
-setEnv = undefined;
-runRequest = undefined;
-runRoutine = undefined;`)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return vm, nil
 }
 
 func readBodyAsString(httpResponse *http.Response) (string, error) {

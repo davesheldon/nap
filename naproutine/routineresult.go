@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-naproutine.go - this data structure represents a runnable set of instructions (a routine)
+routineresult.go - this data structure represents a routine run result
 */
 package naproutine
 
@@ -24,7 +24,6 @@ import (
 )
 
 type RoutineResult struct {
-	Name        string
 	StepResults []*RoutineStepResult
 	StartTime   time.Time
 	EndTime     time.Time
@@ -58,7 +57,7 @@ func (result *RoutineResult) IsPassing() bool {
 }
 
 func (result *RoutineResult) Print(prefix string) {
-	fmt.Printf("%sRoutine: %s, ElapsedMs: %d, IsPassing: %t\n", prefix, result.Name, result.GetElapsedMs(), result.IsPassing())
+	fmt.Printf("%sElapsedMs: %d, IsPassing: %t\n", prefix, result.GetElapsedMs(), result.IsPassing())
 
 	for i, s := range result.StepResults {
 		s.print(i, prefix)
@@ -66,7 +65,7 @@ func (result *RoutineResult) Print(prefix string) {
 }
 
 func (stepResult *RoutineStepResult) print(i int, prefix string) {
-	fmt.Printf("%sStep %d: %s\n", prefix, i+1, stepResult.Step.Name)
+	fmt.Printf("%sRun %d: %s\n", prefix, i+1, stepResult.Step.Run)
 	if stepResult.Error != nil {
 		fmt.Printf("- ERROR! %s", stepResult.Error.Error())
 	}
@@ -97,6 +96,13 @@ func StepRequestResult(step *RoutineStep, requestResult *naprequest.RequestResul
 	stepResult.Step = step
 
 	stepResult.RequestResult = requestResult
+
+	return stepResult
+}
+
+func StepScriptResult(step *RoutineStep) *RoutineStepResult {
+	stepResult := new(RoutineStepResult)
+	stepResult.Step = step
 
 	return stepResult
 }

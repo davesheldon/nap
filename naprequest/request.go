@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-naprequest.go - this data structure represents a runnable HTTP request
+request.go - this data structure represents a runnable HTTP request
 */
 package naprequest
 
@@ -32,14 +32,14 @@ import (
 )
 
 type Request struct {
-	Name              string
 	Path              string
 	Verb              string
-	Type              string
 	Body              string
 	Headers           map[string]string
 	PreRequestScript  string
 	PostRequestScript string
+	PreRequestScriptFile  string
+	PostRequestScriptFile string
 }
 
 func parse(data []byte) (*Request, error) {
@@ -53,7 +53,7 @@ func parse(data []byte) (*Request, error) {
 	return &r, nil
 }
 
-func LoadByName(name string, environmentVariables map[string]string) (*Request, error) {
+func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 	fileName := path.Join("requests", sanitize.BaseName(name)+".yml")
 
 	data, err := os.ReadFile(fileName)
@@ -74,16 +74,6 @@ func LoadByName(name string, environmentVariables map[string]string) (*Request, 
 	return parse(data)
 }
 
-func (r *Request) Run() *RequestResult {
-	result := new(RequestResult)
-
-	result.StartTime = time.Now()
-	result.HttpResponse, result.Error = r.executeHttp()
-	result.EndTime = time.Now()
-
-	return result
-}
-
 func (r *Request) PrintStats() {
 	fmt.Printf("\n\nRunning: %s\n", r.Name)
 	fmt.Printf("Path: %s\n", r.Path)
@@ -96,34 +86,4 @@ func (r *Request) PrintStats() {
 	if len(r.Body) > 0 {
 		fmt.Printf("Request Body: %s\n", r.Body)
 	}
-}
-
-func (r *Request) executeHttp() (*http.Response, error) {
-	client := &http.Client{}
-
-	var content io.Reader
-
-	if len(r.Body) > 0 {
-		content = bytes.NewBuffer([]byte(r.Body))
-	} else {
-		content = strings.NewReader("")
-	}
-
-	request, err := http.NewRequest(r.Verb, r.Path, content)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range r.Headers {
-		request.Header.Add(k, v)
-	}
-
-	resp, err := client.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
 }
