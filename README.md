@@ -159,7 +159,7 @@ headers:
 
 ## Built-in functions
 
-Nap provides several built-in functions for scripts to use. These are all nested under the global variable `nap`
+Nap provides several built-in functions for scripts to use. These are all nested under the global variable `nap`:
 
 | Function | Description |
 |-|-|
