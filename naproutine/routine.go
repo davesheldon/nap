@@ -19,16 +19,11 @@ package naproutine
 
 import (
 	"fmt"
-	"github.com/davesheldon/nap/naprequest"
-	"github.com/davesheldon/nap/napcontext"
-	"github.com/kennygrant/sanitize"
-	"gopkg.in/yaml.v2"
 	"os"
-	"path"
-    "path/filepath"
 	"strings"
-	"sync"
-	"time"
+
+	"github.com/davesheldon/nap/napcontext"
+	"gopkg.in/yaml.v2"
 )
 
 type Routine struct {
@@ -45,19 +40,19 @@ func NewStep(run string) *RoutineStep {
 	return step
 }
 
-func NewRoutine(context *napcontext.Context, ...runs string) *Routine {
+func NewRoutine(ctx *napcontext.Context, runs ...string) *Routine {
 	routine := new(Routine)
-	routine.Context = context
 
 	for _, run := range runs {
-		routine.steps = routine.steps.append(NewStep(run))
+		routine.Steps = append(routine.Steps, NewStep(run))
 	}
+
+	return routine
 }
 
 func LoadFromPath(path string, ctx *napcontext.Context) (*Routine, error) {
-	
-	data, err := os.ReadFile(path)
 
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +66,12 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Routine, error) {
 
 	data = []byte(dataAsString)
 
-	routine := parse(data)
+	routine, err := parse(data)
+	if err != nil {
+		return nil, err
+	}
 
-	return routine
+	return routine, nil
 }
 
 func parse(data []byte) (*Routine, error) {

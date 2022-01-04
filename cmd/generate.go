@@ -43,7 +43,7 @@ func containsString(slice []string, value string) bool {
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate <type> <target>",
-	Short: "Generate a new component",
+	Short: "Generate a new request, routine, script or environment",
 	Long:  `The generate command will add a file to the appropriate location using the template for that object type.`,
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {

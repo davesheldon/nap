@@ -18,26 +18,21 @@ request.go - this data structure represents a runnable HTTP request
 package naprequest
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/kennygrant/sanitize"
-	"io"
-	"net/http"
 	"os"
-	"path"
 	"strings"
-	"time"
 
+	"github.com/davesheldon/nap/napcontext"
 	"gopkg.in/yaml.v2"
 )
 
 type Request struct {
-	Path              string
-	Verb              string
-	Body              string
-	Headers           map[string]string
-	PreRequestScript  string
-	PostRequestScript string
+	Path                  string
+	Verb                  string
+	Body                  string
+	Headers               map[string]string
+	PreRequestScript      string
+	PostRequestScript     string
 	PreRequestScriptFile  string
 	PostRequestScriptFile string
 }
@@ -54,9 +49,7 @@ func parse(data []byte) (*Request, error) {
 }
 
 func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
-	fileName := path.Join("requests", sanitize.BaseName(name)+".yml")
-
-	data, err := os.ReadFile(fileName)
+	data, err := os.ReadFile(path)
 
 	if err != nil {
 		return nil, err
@@ -64,7 +57,7 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 
 	dataAsString := string(data)
 
-	for k, v := range environmentVariables {
+	for k, v := range ctx.EnvironmentVariables {
 		variable := fmt.Sprintf("${%s}", k)
 		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
 	}
@@ -75,7 +68,7 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 }
 
 func (r *Request) PrintStats() {
-	fmt.Printf("\n\nRunning: %s\n", r.Name)
+	fmt.Println("\n\nRunning Request...")
 	fmt.Printf("Path: %s\n", r.Path)
 	fmt.Printf("Verb: %s\n", r.Verb)
 

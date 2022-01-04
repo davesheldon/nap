@@ -19,8 +19,9 @@ package naproutine
 
 import (
 	"fmt"
-	"github.com/davesheldon/nap/naprequest"
 	"time"
+
+	"github.com/davesheldon/nap/naprequest"
 )
 
 type RoutineResult struct {
@@ -70,7 +71,7 @@ func (stepResult *RoutineStepResult) print(i int, prefix string) {
 		fmt.Printf("- ERROR! %s", stepResult.Error.Error())
 	}
 
-	if stepResult.Step.Type == "request" && stepResult.RequestResult != nil {
+	if stepResult.RequestResult != nil {
 		if stepResult.RequestResult.Error != nil {
 			fmt.Printf("%s- ERROR! %s\n", prefix, stepResult.RequestResult.Error.Error())
 		} else {
@@ -78,7 +79,7 @@ func (stepResult *RoutineStepResult) print(i int, prefix string) {
 		}
 	}
 
-	if stepResult.Step.Type == "routine" && stepResult.SubroutineResult != nil {
+	if stepResult.SubroutineResult != nil {
 		stepResult.SubroutineResult.Print(prefix + "- ")
 	}
 }

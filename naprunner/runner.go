@@ -18,26 +18,28 @@ runner.go - this file contains logic for running requests, routines and scripts
 package naprunner
 
 import (
-	"fmt"
+	"bytes"
+	"errors"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/naprequest"
 	"github.com/davesheldon/nap/naproutine"
-	"github.com/davesheldon/nap/napcontext"
-	"github.com/kennygrant/sanitize"
+	"github.com/robertkrimen/otto"
 	"gopkg.in/yaml.v2"
-	"os"
-	"path"
-    "path/filepath"
-	"strings"
-	"sync"
-	"time"
 )
 
-func RunPath(ctx *Context, path string) *RoutineResult {
+func RunPath(ctx *napcontext.Context, path string) *naproutine.RoutineResult {
 	routine := naproutine.NewRoutine(ctx, path)
 	return runRoutine(ctx, routine, nil, nil)
 }
 
-func runScript(ctx *Context, path string) error {
+func runScript(ctx *napcontext.Context, path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -48,14 +50,14 @@ func runScript(ctx *Context, path string) error {
 	return runScriptInline(ctx, script)
 }
 
-func runScriptInline(ctx *Context, script string) error {
-	_, err = ctx.ScriptVm.Run(script)
+func runScriptInline(ctx *napcontext.Context, script string) error {
+	_, err := ctx.ScriptVm.Run(script)
 
 	return err
 }
 
-func runRequest(ctx *Context, request *naprequest.Request) *RequestResult {
-	result := new(RequestResult)
+func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
+	result := new(naprequest.RequestResult)
 
 	result.StartTime = time.Now()
 
@@ -112,54 +114,63 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-
-func runRoutine(ctx *Context, routine *Routine, parentStep *RoutineStep, ch chan *RoutineStepResult) *RoutineResult {
-	result := new(RoutineResult)
+func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
+	result := new(naproutine.RoutineResult)
 	result.StartTime = time.Now()
 
 	waitCount := 0
 
-	childCh := make(chan *RoutineStepResult)
+	childCh := make(chan *naproutine.RoutineStepResult)
 
-	var initialCtx := routine.Context.EnvironmentVariables.Clone()
+	ctxSnapshot := ctx.Clone()
+
+	err := setupVm(ctx)
+	if err != nil {
+		result.EndTime = time.Now()
+		result.Error = err
+		return result
+	}
 
 	for _, step := range routine.Steps {
-		var stepResult *RoutineStepResult
+		var stepResult *naproutine.RoutineStepResult
 
 		stepType, err := peekType(step.Run)
 
 		if err != nil {
-			stepResult = StepError(step, err)
-		}
-		else {
+			stepResult = naproutine.StepError(step, err)
+		} else {
 			if stepType == "request" {
 				request, err := naprequest.LoadFromPath(step.Run, ctx)
-				
+
 				if err != nil {
-					stepResult = StepError(step, err)
+					stepResult = naproutine.StepError(step, err)
 				} else {
-					stepResult = StepRequestResult(step, runRequest(ctx, request))
+					stepResult = naproutine.StepRequestResult(step, runRequest(ctx, request))
 				}
 			}
 
-			if step.Type == "script" {
+			if stepType == "script" {
 				err = runScript(ctx, step.Run)
 
 				if err != nil {
-					stepResult = StepError(step, err)
+					stepResult = naproutine.StepError(step, err)
 				} else {
-					routine.Context.ScriptVm.Run(string(scriptData))
-					stepResult = StepScriptResult(step)
+					err = runScript(ctx, step.Run)
+					if err != nil {
+						stepResult = naproutine.StepError(step, err)
+					} else {
+						stepResult = naproutine.StepScriptResult(step)
+					}
 				}
-				
+
 			}
 
-			if step.Type == "routine" {
-				subroutineCtx := initialCtx.Clone()
-				subroutine, err := LoadFromPath(step.Run, subroutineCtx)
+			if stepType == "routine" {
+				subroutineCtx := ctxSnapshot.Clone()
+				subroutine, err := naproutine.LoadFromPath(step.Run, subroutineCtx)
 
 				if err != nil {
-					stepResult = StepError(step, err)
+					stepResult = naproutine.StepError(step, err)
 				} else {
 					waitCount = waitCount + 1
 
@@ -179,7 +190,7 @@ func runRoutine(ctx *Context, routine *Routine, parentStep *RoutineStep, ch chan
 	}
 
 	if ch != nil {
-		ch <- StepSubroutineResult(parentStep, result)
+		ch <- naproutine.StepSubroutineResult(parentStep, result)
 	}
 
 	result.EndTime = time.Now()
@@ -189,10 +200,10 @@ func runRoutine(ctx *Context, routine *Routine, parentStep *RoutineStep, ch chan
 
 func peekType(path string) (string, error) {
 	if filepath.Ext(path) == ".js" {
-		return "script"
+		return "script", nil
 	}
 
-	var yamlMap := map[string]string{}
+	yamlMap := map[string]string{}
 
 	data, err := os.ReadFile(path)
 
@@ -200,12 +211,81 @@ func peekType(path string) (string, error) {
 		return "", err
 	}
 
-	err := yaml.Unmarshal(data, &yamlMap)
+	err = yaml.Unmarshal(data, &yamlMap)
 
-	if val, ok := dict["foo"]; ok {
+	if val, ok := yamlMap["type"]; ok {
 		return val, nil
-	}
-	else {
+	} else {
 		return "", errors.New("type not found")
 	}
+}
+
+func setupVm(ctx *napcontext.Context) error {
+
+	err := ctx.ScriptVm.Set("napRun", func(call otto.FunctionCall) otto.Value {
+
+		path := call.Argument(0).String()
+		RunPath(ctx, path)
+
+		// todo: process result
+
+		return otto.Value{}
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = ctx.ScriptVm.Set("napEnvSet", func(call otto.FunctionCall) otto.Value {
+		ctx.EnvironmentVariables[call.Argument(0).String()] = call.Argument(1).String()
+
+		return otto.Value{}
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = ctx.ScriptVm.Set("napEnvGet", func(call otto.FunctionCall) otto.Value {
+		result, _ := ctx.ScriptVm.ToValue(ctx.EnvironmentVariables[call.Argument(0).String()])
+		return result
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = ctx.ScriptVm.Set("napFail", func(call otto.FunctionCall) otto.Value {
+		message := call.Argument(0).String()
+
+		ctx.ScriptFailure = true
+		ctx.ScriptFailureMessage = message
+
+		return otto.Value{}
+	})
+
+	if err != nil {
+		return err
+	}
+
+	_, err = ctx.ScriptVm.Run(`
+var nap = { 
+	env: { 
+		get: napEnvGet, 
+		set: napEnvSet
+	}, 
+	run: napRun,
+	fail: napFail
+};
+
+napEnvGet = undefined;
+napEnvSet = undefined;
+napRun = undefined;
+napFail = undefined;`)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

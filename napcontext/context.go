@@ -22,95 +22,24 @@ import (
 )
 
 type Context struct {
-	ScriptVm otto.Otto
+	ScriptVm             *otto.Otto
 	EnvironmentVariables map[string]string
-	ScriptFailure bool
+	ScriptFailure        bool
 	ScriptFailureMessage string
 }
 
-func New(environmentVariables map[string]string) (*Context, error) {
-	ctx =: new(Context)
+func New(environmentVariables map[string]string) *Context {
+	ctx := new(Context)
 
 	for k, v := range environmentVariables {
 		ctx.EnvironmentVariables[k] = v
 	}
-	
-	ctx.ScriptVm, err := setupVm(ctx)
 
-	return ctx, nil
+	ctx.ScriptVm = otto.New()
+
+	return ctx
 }
 
 func (ctx *Context) Clone() *Context {
 	return New(ctx.EnvironmentVariables)
-}
-
-func setupVm(ctx *Context) (*otto.Otto, error) {
-	vm := otto.New()
-
-	err := vm.Set("napRun", func(call otto.FunctionCall) otto.Value {
-		
-		path := call.Argument(0).String()
-		result := Run(ctx, path)
-
-		// todo: process result
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("napEnvSet", func(call otto.FunctionCall) otto.Value {
-		ctx.EnvironmentVariables[call.Argument(0).String()] = call.Argument(1).String()
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("napEnvGet", func(call otto.FunctionCall) otto.Value {
-		result, _ := vm.ToValue(ctx.EnvironmentVariables[call.Argument(0).String()])
-		return result
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = vm.Set("napFail", func(call otto.FunctionCall) otto.Value {
-		message := call.Argument(0).String()
-
-		ctx.ScriptFailure = true
-		ctx.ScriptFailureMessage = message
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = vm.Run(`
-var nap = { 
-	env: { 
-		get: napEnvGet, 
-		set: napEnvSet
-	}, 
-	run: napRun,
-	fail: napFail
-};
-
-napEnvGet = undefined;
-napEnvSet = undefined;
-napRun = undefined;
-napFail = undefined;`)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return vm, nil
 }

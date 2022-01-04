@@ -26,12 +26,7 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strings"
 
-	"github.com/davesheldon/nap/naproutine"
-	"github.com/robertkrimen/otto"
-
-	"github.com/davesheldon/nap/naprequest"
 	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/naprunner"
 
@@ -42,8 +37,8 @@ import (
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run <target>",
-	Short: "executes the target",
-	Long:  `The run command executes the request, routine or script at the path provided.`,
+	Short: "Execute a request, routine or script",
+	Long:  `The run command executes a request, routine or script at the path provided.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		runConfig := newRunConfig(cmd, args)
@@ -57,10 +52,7 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		ctx, err := napcontext.New(environmentVariables)
-		if err != nil {
-			return err
-		}
+		ctx := napcontext.New(environmentVariables)
 
 		routineResult := naprunner.RunPath(ctx, runConfig.Target)
 
