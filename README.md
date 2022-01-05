@@ -4,6 +4,16 @@
 
 Nap is a _FAST_, file-based framework for creating and running integration tests over HTTP.
 
+# Table of Contents
+
+- <font size="4">[Installation Options](#installation-options)</font>
+- <font size="4">[Getting Started](#getting-started)</font>
+- <font size="4">[Components](#components)</font>
+- <font size="4">[Requests](#requests)</font>
+- <font size="4">[Environments](#environments)</font>
+- <font size="4">[Scripts](#scripts)</font>
+- <font size="4">[Routines](#routines)</font>
+
 # Installation Options
 
 ## Using go get
