@@ -8,7 +8,6 @@ Nap is a _FAST_, file-based framework for creating and running integration tests
 
 - <font size="4">[Installation Options](#installation-options)</font>
 - <font size="4">[Getting Started](#getting-started)</font>
-- <font size="4">[Components](#components)</font>
 - <font size="4">[Requests](#requests)</font>
 - <font size="4">[Environments](#environments)</font>
 - <font size="4">[Scripts](#scripts)</font>
@@ -64,7 +63,7 @@ A new project consists of the project directory and a few default folders and fi
     script-1.js
 ```
 
-# Components
+## Components
 
 A Nap project may consist of several different components: requests, environments, scripts and routines.
 
