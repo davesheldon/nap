@@ -134,7 +134,7 @@ $ nap run requests/my-request.yml -e env/my-env.yml
 
 # Scripts
 
-A **script** is a file containing [ES6-compatible](https://www.w3schools.com/js/js_es6.asp) Javascript. Nap supports ES6 Javascript via the [Otto](https://github.com/robertkrimen/otto) library, which means the same [limitations](https://github.com/robertkrimen/otto) are in play as mentioned on the Otto project page.
+A **script** is a file containing [ES5-compatible](https://www.w3schools.com/js/js_es5.asp) Javascript. Nap supports ES6 Javascript via the [Otto](https://github.com/robertkrimen/otto) library, which means the same [limitations](https://github.com/robertkrimen/otto) are in play as mentioned on the Otto project page.
 
 Scripts can be run before or after a request:
 
@@ -176,6 +176,10 @@ Nap provides several built-in functions for scripts to use. These are all nested
 | nap.env.set(key: string, value: string) | Sets the (in-memory) value of an environment variable |
 | nap.run(path) | Locates the referenced file, resolves its type and runs it |
 | nap.fail(message: string) | Trigger a failure with a message; abort the rest of the routine |
+
+## Environment Variables in Scripts
+
+The templating syntax supported for environments is not supported in scripts. In order to access environment variables from inside a script, you must use the built-in functions.
 
 # Routines
 
@@ -220,6 +224,68 @@ steps:
 Each subroutine will run within its own goroutine. This allows designing each subroutine as an end-to-end integration test that can run in parallel to other tests. 
 
 
-## Concurrency Considerations
+# Concurrency
 
-Each routine (or top level command, if not a routine) receives its own copy of the environment variables and its own scripting instance. This keeps each routine isolated from the others, avoiding race conditions.
+Nap is built upon a concurrency model where, by default, each routine runs in a separate thread. 
+
+## Environment Variables
+
+Each routine-thread in Nap receives a snapshot of the latest set of environment variables (including any changes made via scripts on the parent routine up until that point). This allows for scenarios such as performing authentication up-front, setting a token as a variable, and then running multiple routines in parallel that rely on that token. For example:
+
+```yml
+type: routine
+steps:
+  - run: ../requests/auth.yml
+  - run: authenticated-routine-1.yml
+  - run: authenticated-routine-2.yml
+  - run: authenticated-routine-3.yml
+```
+
+The above results in a workflow like the following:
+
+1. Run the auth request (sets the auth token into env)
+2. Start the remaining subroutines (each receives its own copy of the current context, including a fresh scripting instance and snapshot of the environment variables)
+3. Each routine runs, using its copy of the env auth token.
+
+# Scripting Considerations
+
+Since Nap can run scripts directly, entire workflows can be orchestrated using them. This format is encouraged for more advanced workflows. For example:
+
+```javascript
+var start = function(){
+  console.log("Starting script"); // logs will show in the terminal window
+
+  nap.run("../requests/auth.yml");
+
+  if (nap.env.get("auth_token") && nap.env.get("auth_token").length > 0){
+    console.log("Authenticated.");
+  }
+  else {
+    nap.fail("Authentication failed.");
+    return;
+  }
+
+  runRoutines();
+};
+
+var runRoutines = function(){
+  console.log("Running routines synchronously");
+
+  // Since each routine is being started via a script, they'll run in serial.
+  // Subroutines of these routines will still run in parallel.
+
+  nap.run("../routines/routine-1.yml"); 
+
+  var errorMessage = nap.env.get('error_mesage');
+
+  if (errorMessage && errorMessage.length > 0) {
+    nap.fail(errorMessage);
+    return;
+  }
+
+  nap.run("../routines/routine-2.yml"); 
+  nap.run("../routines/routine-3.yml");
+};
+
+start();
+```

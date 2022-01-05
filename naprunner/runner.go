@@ -122,8 +122,6 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	childCh := make(chan *naproutine.RoutineStepResult)
 
-	ctxSnapshot := ctx.Clone()
-
 	err := setupVm(ctx)
 	if err != nil {
 		result.EndTime = time.Now()
@@ -166,7 +164,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			}
 
 			if stepType == "routine" {
-				subroutineCtx := ctxSnapshot.Clone()
+				subroutineCtx := ctx.Clone()
 				subroutine, err := naproutine.LoadFromPath(step.Run, subroutineCtx)
 
 				if err != nil {
