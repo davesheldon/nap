@@ -19,7 +19,7 @@ package naprunner
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -35,6 +35,7 @@ import (
 )
 
 func RunPath(ctx *napcontext.Context, path string) *naproutine.RoutineResult {
+	fmt.Printf("Run path: %s\n", path)
 	routine := naproutine.NewRoutine(ctx, path)
 	return runRoutine(ctx, routine, nil, nil)
 }
@@ -47,16 +48,27 @@ func runScript(ctx *napcontext.Context, path string) error {
 
 	script := string(data)
 
+	fmt.Printf("Running script: %s", path)
+
 	return runScriptInline(ctx, script)
 }
 
 func runScriptInline(ctx *napcontext.Context, script string) error {
-	_, err := ctx.ScriptVm.Run(script)
+	result, err := ctx.ScriptVm.Run(script)
+
+	if err == nil {
+		fmt.Println("result")
+		fmt.Println(result.ToString())
+	} else {
+		fmt.Println("error")
+		fmt.Println(err.Error())
+	}
 
 	return err
 }
 
 func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
+	fmt.Println("request")
 	result := new(naprequest.RequestResult)
 
 	result.StartTime = time.Now()
@@ -115,6 +127,7 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 }
 
 func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
+	fmt.Println("routine")
 	result := new(naproutine.RoutineResult)
 	result.StartTime = time.Now()
 
@@ -131,8 +144,11 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	for _, step := range routine.Steps {
 		var stepResult *naproutine.RoutineStepResult
+		stepResult = nil
 
 		stepType, err := peekType(step.Run)
+
+		fmt.Printf("stepType: %s\n", stepType)
 
 		if err != nil {
 			stepResult = naproutine.StepError(step, err)
@@ -153,14 +169,8 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 				if err != nil {
 					stepResult = naproutine.StepError(step, err)
 				} else {
-					err = runScript(ctx, step.Run)
-					if err != nil {
-						stepResult = naproutine.StepError(step, err)
-					} else {
-						stepResult = naproutine.StepScriptResult(step)
-					}
+					stepResult = naproutine.StepScriptResult(step)
 				}
-
 			}
 
 			if stepType == "routine" {
@@ -176,6 +186,10 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 					// we'll get the results after the loop finishes
 					continue
 				}
+			}
+
+			if stepResult == nil {
+				stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", step.Run))
 			}
 		}
 
@@ -193,6 +207,13 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	result.EndTime = time.Now()
 
+	for _, v := range result.StepResults {
+		if v.Error != nil {
+			result.Error = v.Error
+			break
+		}
+	}
+
 	return result
 }
 
@@ -206,15 +227,19 @@ func peekType(path string) (string, error) {
 	data, err := os.ReadFile(path)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("type of file unclear: %s", path)
 	}
 
 	err = yaml.Unmarshal(data, &yamlMap)
 
+	if err != nil {
+		return "", fmt.Errorf("type of file unclear: %s", path)
+	}
+
 	if val, ok := yamlMap["type"]; ok {
 		return val, nil
 	} else {
-		return "", errors.New("type not found")
+		return "", fmt.Errorf("type of file unclear: %s", path)
 	}
 }
 

@@ -96,12 +96,20 @@ headers:
 
 		firstRoutineData := []byte(`type: routine
 steps:
-  - run: ../requests/request-1.yml`)
+  - run: ../requests/request-1.yml
+`)
 		if err := tryWriteFileData(path.Join(projectPath, "routines", "routine-1.yml"), firstRoutineData); err != nil {
 			return err
 		}
 
 		fmt.Printf("Project '%s' created.\n", projectPath)
+
+		firstScriptData := []byte(`console.log("Hello, World!")
+		`)
+
+		if err := tryWriteFileData(path.Join(projectPath, "scripts", "script-1.js"), firstScriptData); err != nil {
+			return err
+		}
 
 		return nil
 	},
