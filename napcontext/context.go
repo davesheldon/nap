@@ -26,6 +26,7 @@ type Context struct {
 	EnvironmentVariables map[string]string
 	ScriptFailure        bool
 	ScriptFailureMessage string
+	ScriptOutput         []string
 }
 
 func New(environmentVariables map[string]string) *Context {

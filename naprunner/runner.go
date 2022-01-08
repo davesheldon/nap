@@ -19,6 +19,7 @@ package naprunner
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,40 +36,31 @@ import (
 )
 
 func RunPath(ctx *napcontext.Context, path string) *naproutine.RoutineResult {
-	fmt.Printf("Run path: %s\n", path)
 	routine := naproutine.NewRoutine(ctx, path)
 	return runRoutine(ctx, routine, nil, nil)
 }
 
-func runScript(ctx *napcontext.Context, path string) error {
+func runScript(ctx *napcontext.Context, path string) ([]string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return []string{}, err
 	}
 
 	script := string(data)
 
-	fmt.Printf("Running script: %s", path)
-
 	return runScriptInline(ctx, script)
 }
 
-func runScriptInline(ctx *napcontext.Context, script string) error {
-	result, err := ctx.ScriptVm.Run(script)
+func runScriptInline(ctx *napcontext.Context, script string) ([]string, error) {
+	_, err := ctx.ScriptVm.Run(script)
 
-	if err == nil {
-		fmt.Println("result")
-		fmt.Println(result.ToString())
-	} else {
-		fmt.Println("error")
-		fmt.Println(err.Error())
-	}
+	output := ctx.ScriptOutput
+	ctx.ScriptOutput = []string{}
 
-	return err
+	return output, err
 }
 
 func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
-	fmt.Println("request")
 	result := new(naprequest.RequestResult)
 
 	result.StartTime = time.Now()
@@ -126,8 +118,15 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return true
+}
+
 func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
-	fmt.Println("routine")
 	result := new(naproutine.RoutineResult)
 	result.StartTime = time.Now()
 
@@ -146,51 +145,57 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 		var stepResult *naproutine.RoutineStepResult
 		stepResult = nil
 
-		stepType, err := peekType(step.Run)
+		if !fileExists(step.Run) {
+			stepResult = naproutine.StepError(step, fmt.Errorf("file doesn't exist: %s", step.Run))
+			result.StepResults = append(result.StepResults, stepResult)
+			break
+		}
 
-		fmt.Printf("stepType: %s\n", stepType)
+		stepType, err := peekType(step.Run)
 
 		if err != nil {
 			stepResult = naproutine.StepError(step, err)
-		} else {
-			if stepType == "request" {
-				request, err := naprequest.LoadFromPath(step.Run, ctx)
+			result.StepResults = append(result.StepResults, stepResult)
+			break
+		}
 
-				if err != nil {
-					stepResult = naproutine.StepError(step, err)
-				} else {
-					stepResult = naproutine.StepRequestResult(step, runRequest(ctx, request))
-				}
+		if stepType == "request" {
+			request, err := naprequest.LoadFromPath(step.Run, ctx)
+
+			if err != nil {
+				stepResult = naproutine.StepError(step, err)
+			} else {
+				stepResult = naproutine.StepRequestResult(step, runRequest(ctx, request))
 			}
+		}
 
-			if stepType == "script" {
-				err = runScript(ctx, step.Run)
+		if stepType == "script" {
+			output, err := runScript(ctx, step.Run)
 
-				if err != nil {
-					stepResult = naproutine.StepError(step, err)
-				} else {
-					stepResult = naproutine.StepScriptResult(step)
-				}
+			if err != nil {
+				stepResult = naproutine.StepError(step, err)
+			} else {
+				stepResult = naproutine.StepScriptResult(step, output)
 			}
+		}
 
-			if stepType == "routine" {
-				subroutineCtx := ctx.Clone()
-				subroutine, err := naproutine.LoadFromPath(step.Run, subroutineCtx)
+		if stepType == "routine" {
+			subroutineCtx := ctx.Clone()
+			subroutine, err := naproutine.LoadFromPath(step.Run, subroutineCtx)
 
-				if err != nil {
-					stepResult = naproutine.StepError(step, err)
-				} else {
-					waitCount = waitCount + 1
+			if err != nil {
+				stepResult = naproutine.StepError(step, err)
+			} else {
+				waitCount = waitCount + 1
 
-					go runRoutine(subroutineCtx, subroutine, step, childCh)
-					// we'll get the results after the loop finishes
-					continue
-				}
+				go runRoutine(subroutineCtx, subroutine, step, childCh)
+				// we'll get the results after the loop finishes
+				continue
 			}
+		}
 
-			if stepResult == nil {
-				stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", step.Run))
-			}
+		if stepResult == nil {
+			stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", step.Run))
 		}
 
 		result.StepResults = append(result.StepResults, stepResult)
@@ -222,22 +227,22 @@ func peekType(path string) (string, error) {
 		return "script", nil
 	}
 
-	yamlMap := map[string]string{}
+	var yamlMap map[string]interface{}
 
 	data, err := os.ReadFile(path)
 
 	if err != nil {
-		return "", fmt.Errorf("type of file unclear: %s", path)
+		return "", fmt.Errorf("type of file unclear: %s (cannot read file: %s)", path, err.Error())
 	}
 
 	err = yaml.Unmarshal(data, &yamlMap)
 
 	if err != nil {
-		return "", fmt.Errorf("type of file unclear: %s", path)
+		return "", fmt.Errorf("type of file unclear: %s (cannot unmarshal: %s)", path, err.Error())
 	}
 
 	if val, ok := yamlMap["type"]; ok {
-		return val, nil
+		return val.(string), nil
 	} else {
 		return "", fmt.Errorf("type of file unclear: %s", path)
 	}
@@ -248,11 +253,10 @@ func setupVm(ctx *napcontext.Context) error {
 	err := ctx.ScriptVm.Set("napRun", func(call otto.FunctionCall) otto.Value {
 
 		path := call.Argument(0).String()
-		RunPath(ctx, path)
+		result := RunPath(ctx, path)
 
-		// todo: process result
-
-		return otto.Value{}
+		v, _ := ctx.ScriptVm.ToValue(result)
+		return v
 	})
 
 	if err != nil {
@@ -290,6 +294,19 @@ func setupVm(ctx *napcontext.Context) error {
 	if err != nil {
 		return err
 	}
+
+	ctx.ScriptVm.Set("__log__", func(call otto.FunctionCall) otto.Value {
+		m := ""
+		for _, v := range call.ArgumentList {
+			m = fmt.Sprintf("%s %s", m, v.String())
+		}
+
+		ctx.ScriptOutput = append(ctx.ScriptOutput, m)
+
+		return otto.Value{}
+	})
+
+	ctx.ScriptVm.Run("console.log = __log__;")
 
 	_, err = ctx.ScriptVm.Run(`
 var nap = { 

@@ -101,9 +101,10 @@ func StepRequestResult(step *RoutineStep, requestResult *naprequest.RequestResul
 	return stepResult
 }
 
-func StepScriptResult(step *RoutineStep) *RoutineStepResult {
+func StepScriptResult(step *RoutineStep, scriptOutput []string) *RoutineStepResult {
 	stepResult := new(RoutineStepResult)
 	stepResult.Step = step
+	stepResult.ScriptOutput = scriptOutput
 
 	return stepResult
 }
@@ -121,5 +122,6 @@ type RoutineStepResult struct {
 	Step             *RoutineStep
 	RequestResult    *naprequest.RequestResult
 	SubroutineResult *RoutineResult
+	ScriptOutput     []string
 	Error            error
 }
