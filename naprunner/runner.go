@@ -37,7 +37,7 @@ import (
 
 func RunPath(ctx *napcontext.Context, path string) *naproutine.RoutineResult {
 	routine := naproutine.NewRoutine(ctx, path)
-	return runRoutine(ctx, routine, nil, nil)
+	return runRoutine(ctx, routine, filepath.Dir(path), nil, nil)
 }
 
 func runScript(ctx *napcontext.Context, path string) ([]string, error) {
@@ -126,7 +126,7 @@ func fileExists(path string) bool {
 	return true
 }
 
-func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
+func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, workingDirectory string, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
 	result := new(naproutine.RoutineResult)
 	result.StartTime = time.Now()
 
@@ -145,13 +145,15 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 		var stepResult *naproutine.RoutineStepResult
 		stepResult = nil
 
-		if !fileExists(step.Run) {
-			stepResult = naproutine.StepError(step, fmt.Errorf("file doesn't exist: %s", step.Run))
+		stepPath := filepath.Join(workingDirectory, step.Run)
+
+		if !fileExists(stepPath) {
+			stepResult = naproutine.StepError(step, fmt.Errorf("file doesn't exist: %s", stepPath))
 			result.StepResults = append(result.StepResults, stepResult)
 			break
 		}
 
-		stepType, err := peekType(step.Run)
+		stepType, err := peekType(stepPath)
 
 		if err != nil {
 			stepResult = naproutine.StepError(step, err)
@@ -160,7 +162,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 		}
 
 		if stepType == "request" {
-			request, err := naprequest.LoadFromPath(step.Run, ctx)
+			request, err := naprequest.LoadFromPath(stepPath, ctx)
 
 			if err != nil {
 				stepResult = naproutine.StepError(step, err)
@@ -170,7 +172,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 		}
 
 		if stepType == "script" {
-			output, err := runScript(ctx, step.Run)
+			output, err := runScript(ctx, stepPath)
 
 			if err != nil {
 				stepResult = naproutine.StepError(step, err)
@@ -181,21 +183,21 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 		if stepType == "routine" {
 			subroutineCtx := ctx.Clone()
-			subroutine, err := naproutine.LoadFromPath(step.Run, subroutineCtx)
+			subroutine, err := naproutine.LoadFromPath(stepPath, subroutineCtx)
 
 			if err != nil {
 				stepResult = naproutine.StepError(step, err)
 			} else {
 				waitCount = waitCount + 1
 
-				go runRoutine(subroutineCtx, subroutine, step, childCh)
+				go runRoutine(subroutineCtx, subroutine, filepath.Dir(stepPath), step, childCh)
 				// we'll get the results after the loop finishes
 				continue
 			}
 		}
 
 		if stepResult == nil {
-			stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", step.Run))
+			stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", stepPath))
 		}
 
 		result.StepResults = append(result.StepResults, stepResult)
