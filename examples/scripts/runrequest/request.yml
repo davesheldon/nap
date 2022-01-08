@@ -1,0 +1,7 @@
+type: request
+path: https://cat-fact.herokuapp.com/facts
+verb: GET
+body:
+headers:
+  Accept: application/json
+  Content-Type: application/json

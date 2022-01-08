@@ -18,12 +18,8 @@ cmd/run.go - this is the handler for the run command
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 
@@ -43,35 +39,48 @@ var runCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		runConfig := newRunConfig(cmd, args)
 
-		if runConfig.Verbose {
-			runConfig.printStats()
-		}
-
 		environmentVariables, err := loadEnvironment(runConfig)
 		if err != nil {
 			return err
 		}
 
-		ctx := napcontext.New(environmentVariables)
+		ctx := napcontext.New(environmentVariables, runConfig.TargetDir)
 
-		routineResult := naprunner.RunPath(ctx, runConfig.Target)
+		routineResult := naprunner.RunPath(ctx, runConfig.TargetName)
 
 		if routineResult.Error != nil {
-			return routineResult.Error
+			fmt.Printf("error: %s\n", routineResult.Error.Error())
+		} else {
+			fmt.Println("success")
 		}
-
-		routineResult.Print("")
 
 		return nil
 	},
 }
 
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return true
+}
+
 func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 	environmentVariables := make(map[string]string)
 
-	if len(runConfig.Environment) > 0 {
-		environmentFileName := path.Join("env", runConfig.Environment+".yml")
+	environmentFileName := runConfig.Environment
 
+	if path.Ext(environmentFileName) != ".yml" {
+		environmentFileName = environmentFileName + ".yml"
+	}
+
+	if !fileExists(environmentFileName) {
+		// try and find it relative to the target path
+		environmentFileName = path.Join(runConfig.TargetDir, "..", "env", environmentFileName)
+	}
+
+	if len(runConfig.Environment) > 0 {
 		if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
 			return environmentVariables, fmt.Errorf("environment '%s' not found", runConfig.Environment)
 		} else if err != nil {
@@ -94,44 +103,21 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 
 type RunConfig struct {
 	Target      string
+	TargetDir   string
+	TargetName  string
 	Environment string
 	Verbose     bool
 }
 
-func (c *RunConfig) printStats() {
-	fmt.Printf("Target: %s\n", c.Target)
-	fmt.Printf("Environment: %s\n", c.Environment)
-	fmt.Printf("Verbose Mode: %t\n", c.Verbose)
-}
-
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config := new(RunConfig)
-	config.Target = args[1]
+	config.Target = args[0]
+	config.TargetDir = path.Dir(config.Target)
+	config.TargetName = path.Base(config.Target)
 	config.Environment, _ = cmd.Flags().GetString("env")
-
-	if len(config.Environment) == 0 {
-		config.Environment = "default"
-	}
-
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
+
 	return config
-}
-
-func readBodyAsString(httpResponse *http.Response) (string, error) {
-	body, err := ioutil.ReadAll(httpResponse.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
-}
-
-func jsonPretty(str string) (string, error) {
-	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, []byte(str), "", "    "); err != nil {
-		return "", err
-	}
-	return prettyJSON.String(), nil
 }
 
 func init() {

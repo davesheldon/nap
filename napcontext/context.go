@@ -26,9 +26,11 @@ type Context struct {
 	EnvironmentVariables map[string]string
 	ScriptFailure        bool
 	ScriptFailureMessage string
+	ScriptOutput         []string
+	WorkingDirectory     string
 }
 
-func New(environmentVariables map[string]string) *Context {
+func New(environmentVariables map[string]string, workingDirectory string) *Context {
 	ctx := new(Context)
 
 	for k, v := range environmentVariables {
@@ -37,9 +39,11 @@ func New(environmentVariables map[string]string) *Context {
 
 	ctx.ScriptVm = otto.New()
 
+	ctx.WorkingDirectory = workingDirectory
+
 	return ctx
 }
 
-func (ctx *Context) Clone() *Context {
-	return New(ctx.EnvironmentVariables)
+func (ctx *Context) Clone(workingDirectory string) *Context {
+	return New(ctx.EnvironmentVariables, workingDirectory)
 }
