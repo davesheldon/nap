@@ -44,28 +44,18 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		ctx := napcontext.New(environmentVariables)
+		ctx := napcontext.New(environmentVariables, runConfig.TargetDir)
 
-		routineResult := naprunner.RunPath(ctx, runConfig.Target)
+		routineResult := naprunner.RunPath(ctx, runConfig.TargetName)
 
 		if routineResult.Error != nil {
-			return routineResult.Error
+			fmt.Printf("error: %s\n", routineResult.Error.Error())
 		} else {
 			fmt.Println("success")
 		}
 
 		return nil
 	},
-}
-
-func isDirectory(dir string) bool {
-	info, err := os.Stat(dir)
-
-	if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-
-	return info.IsDir()
 }
 
 func fileExists(path string) bool {
@@ -114,6 +104,7 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 type RunConfig struct {
 	Target      string
 	TargetDir   string
+	TargetName  string
 	Environment string
 	Verbose     bool
 }
@@ -122,6 +113,7 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config := new(RunConfig)
 	config.Target = args[0]
 	config.TargetDir = path.Dir(config.Target)
+	config.TargetName = path.Base(config.Target)
 	config.Environment, _ = cmd.Flags().GetString("env")
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
 

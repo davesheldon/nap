@@ -23,7 +23,6 @@ import (
 )
 
 type RequestResult struct {
-	Name              string
 	HttpResponse      *http.Response
 	PreRequestResult  string
 	PostRequestResult string
