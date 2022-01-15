@@ -70,13 +70,24 @@ func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptR
 
 func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
 	result := new(naprequest.RequestResult)
+	result.Request = request
 
 	if len(request.PreRequestScript) > 0 {
-		runScriptInline(ctx, request.PreRequestScript)
+		scriptResult := runScriptInline(ctx, request.PreRequestScript)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Pre-Request Script Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	if len(request.PreRequestScriptFile) > 0 {
-		runScript(ctx, request.PreRequestScriptFile)
+		scriptResult := runScript(ctx, request.PreRequestScriptFile)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Pre-Request Script File Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	result.StartTime = time.Now()
@@ -86,11 +97,21 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 	result.EndTime = time.Now()
 
 	if len(request.PostRequestScript) > 0 {
-		runScriptInline(ctx, request.PostRequestScript)
+		scriptResult := runScriptInline(ctx, request.PostRequestScript)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Post-Request Script Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	if len(request.PostRequestScriptFile) > 0 {
-		runScript(ctx, request.PostRequestScriptFile)
+		scriptResult := runScript(ctx, request.PostRequestScriptFile)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Post-Request Script File Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	return result
