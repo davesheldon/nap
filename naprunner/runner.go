@@ -96,6 +96,12 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 	result.EndTime = time.Now()
 
+	err := setVmHttpData(ctx, result)
+	if err != nil {
+		result.Error = fmt.Errorf("error setting js http result: %w", err)
+		return result
+	}
+
 	if len(request.PostRequestScript) > 0 {
 		scriptResult := runScriptInline(ctx, request.PostRequestScript)
 
@@ -369,11 +375,62 @@ var nap = {
 napEnvGet = undefined;
 napEnvSet = undefined;
 napRun = undefined;
-napFail = undefined;`)
+napFail = undefined;
+`)
 
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func setVmHttpData(ctx *napcontext.Context, result *naprequest.RequestResult) error {
+	data := MapVmHttpData(result)
+
+	err := ctx.ScriptVm.Set("napHttpData", data)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = ctx.ScriptVm.Run(`
+nap.http = napHttpData;
+napHttpData = undefined;
+`)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type VmHttpData struct {
+	Request  *VmHttpRequest
+	Response *VmHttpResponse
+}
+
+type VmHttpRequest struct {
+	Url  string
+	Verb string
+}
+
+type VmHttpResponse struct {
+	StatusCode int
+	Status     string
+}
+
+func MapVmHttpData(result *naprequest.RequestResult) *VmHttpData {
+	data := new(VmHttpData)
+
+	data.Request = new(VmHttpRequest)
+	data.Request.Url = result.Request.Path
+	data.Request.Verb = result.Request.Verb
+
+	data.Response = new(VmHttpResponse)
+	data.Response.StatusCode = result.HttpResponse.StatusCode
+	data.Response.Status = result.HttpResponse.Status
+
+	return data
 }
