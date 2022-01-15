@@ -23,6 +23,7 @@ import (
 )
 
 type RequestResult struct {
+	Request           *Request
 	HttpResponse      *http.Response
 	PreRequestResult  string
 	PostRequestResult string
@@ -35,7 +36,7 @@ func (r *RequestResult) GetElapsedMs() int64 {
 	return r.EndTime.Sub(r.StartTime).Milliseconds()
 }
 
-func ResultError(err error) *RequestResult {
+func ResultError(r *Request, err error) *RequestResult {
 	result := new(RequestResult)
 	result.Error = err
 	return result

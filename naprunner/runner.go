@@ -19,6 +19,7 @@ package naprunner
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -70,28 +71,55 @@ func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptR
 
 func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
 	result := new(naprequest.RequestResult)
-
-	result.StartTime = time.Now()
+	result.Request = request
 
 	if len(request.PreRequestScript) > 0 {
-		runScriptInline(ctx, request.PreRequestScript)
+		scriptResult := runScriptInline(ctx, request.PreRequestScript)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Pre-Request Script Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	if len(request.PreRequestScriptFile) > 0 {
-		runScript(ctx, request.PreRequestScriptFile)
+		scriptResult := runScript(ctx, request.PreRequestScriptFile)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Pre-Request Script File Error: %w", scriptResult.Error)
+			return result
+		}
 	}
+
+	result.StartTime = time.Now()
 
 	result.HttpResponse, result.Error = executeHttp(request)
 
+	result.EndTime = time.Now()
+
+	err := setVmHttpData(ctx, result)
+	if err != nil {
+		result.Error = fmt.Errorf("error setting js http result: %w", err)
+		return result
+	}
+
 	if len(request.PostRequestScript) > 0 {
-		runScriptInline(ctx, request.PostRequestScript)
+		scriptResult := runScriptInline(ctx, request.PostRequestScript)
+
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Post-Request Script Error: %w", scriptResult.Error)
+			return result
+		}
 	}
 
 	if len(request.PostRequestScriptFile) > 0 {
-		runScript(ctx, request.PostRequestScriptFile)
-	}
+		scriptResult := runScript(ctx, request.PostRequestScriptFile)
 
-	result.EndTime = time.Now()
+		if scriptResult.Error != nil {
+			result.Error = fmt.Errorf("Post-Request Script File Error: %w", scriptResult.Error)
+			return result
+		}
+	}
 
 	return result
 }
@@ -348,11 +376,95 @@ var nap = {
 napEnvGet = undefined;
 napEnvSet = undefined;
 napRun = undefined;
-napFail = undefined;`)
+napFail = undefined;
+`)
 
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func setVmHttpData(ctx *napcontext.Context, result *naprequest.RequestResult) error {
+	data, err := mapVmHttpData(result)
+
+	if err != nil {
+		return err
+	}
+
+	jsData, err := json.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	// have to do it this way for now because otto won't serialize it properly
+	_, err = ctx.ScriptVm.Run(fmt.Sprintf("nap.http = %s;", string(jsData)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type VmHttpData struct {
+	Request  *VmHttpRequest  `json:"request"`
+	Response *VmHttpResponse `json:"response"`
+}
+
+type VmHttpRequest struct {
+	Url     string            `json:"url"`
+	Verb    string            `json:"verb"`
+	Body    string            `json:"body"`
+	Headers map[string]string `json:"headers"`
+}
+
+type VmHttpResponse struct {
+	StatusCode int                 `json:"statusCode"`
+	Status     string              `json:"status"`
+	Body       string              `json:"body"`
+	JsonBody   interface{}         `json:"jsonBody"`
+	Headers    map[string][]string `json:"headers"`
+}
+
+func mapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
+	data := new(VmHttpData)
+
+	data.Request = new(VmHttpRequest)
+	data.Request.Url = result.Request.Path
+	data.Request.Verb = result.Request.Verb
+	data.Request.Body = result.Request.Body
+	data.Request.Headers = result.Request.Headers
+
+	data.Response = new(VmHttpResponse)
+	data.Response.StatusCode = result.HttpResponse.StatusCode
+	data.Response.Status = result.HttpResponse.Status
+
+	bodyBytes, err := io.ReadAll(result.HttpResponse.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	data.Response.Body = string(bodyBytes)
+
+	defer result.HttpResponse.Body.Close()
+
+	// TODO: support multiple header values per key
+	data.Response.Headers = map[string][]string{}
+
+	for k, v := range result.HttpResponse.Header {
+		if len(v) > 0 {
+			data.Response.Headers[k] = v
+
+			if k == "Content-Type" && strings.Contains(v[0], "json") {
+				err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return data, nil
 }
