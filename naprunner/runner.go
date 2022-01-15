@@ -71,8 +71,6 @@ func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptR
 func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
 	result := new(naprequest.RequestResult)
 
-	result.StartTime = time.Now()
-
 	if len(request.PreRequestScript) > 0 {
 		runScriptInline(ctx, request.PreRequestScript)
 	}
@@ -81,7 +79,11 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 		runScript(ctx, request.PreRequestScriptFile)
 	}
 
+	result.StartTime = time.Now()
+
 	result.HttpResponse, result.Error = executeHttp(request)
+
+	result.EndTime = time.Now()
 
 	if len(request.PostRequestScript) > 0 {
 		runScriptInline(ctx, request.PostRequestScript)
@@ -90,8 +92,6 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 	if len(request.PostRequestScriptFile) > 0 {
 		runScript(ctx, request.PostRequestScriptFile)
 	}
-
-	result.EndTime = time.Now()
 
 	return result
 }
