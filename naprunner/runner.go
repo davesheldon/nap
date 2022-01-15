@@ -19,6 +19,7 @@ package naprunner
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -386,18 +387,18 @@ napFail = undefined;
 }
 
 func setVmHttpData(ctx *napcontext.Context, result *naprequest.RequestResult) error {
-	data := MapVmHttpData(result)
-
-	err := ctx.ScriptVm.Set("napHttpData", data)
+	data, err := mapVmHttpData(result)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = ctx.ScriptVm.Run(`
-nap.http = napHttpData;
-napHttpData = undefined;
-`)
+	jsData, err := json.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	// have to do it this way for now because otto won't serialize it properly
+	_, err = ctx.ScriptVm.Run(fmt.Sprintf("nap.http = %s;", string(jsData)))
 
 	if err != nil {
 		return err
@@ -407,30 +408,63 @@ napHttpData = undefined;
 }
 
 type VmHttpData struct {
-	Request  *VmHttpRequest
-	Response *VmHttpResponse
+	Request  *VmHttpRequest  `json:"request"`
+	Response *VmHttpResponse `json:"response"`
 }
 
 type VmHttpRequest struct {
-	Url  string
-	Verb string
+	Url     string            `json:"url"`
+	Verb    string            `json:"verb"`
+	Body    string            `json:"body"`
+	Headers map[string]string `json:"headers"`
 }
 
 type VmHttpResponse struct {
-	StatusCode int
-	Status     string
+	StatusCode int                 `json:"statusCode"`
+	Status     string              `json:"status"`
+	Body       string              `json:"body"`
+	JsonBody   interface{}         `json:"jsonBody"`
+	Headers    map[string][]string `json:"headers"`
 }
 
-func MapVmHttpData(result *naprequest.RequestResult) *VmHttpData {
+func mapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 	data := new(VmHttpData)
 
 	data.Request = new(VmHttpRequest)
 	data.Request.Url = result.Request.Path
 	data.Request.Verb = result.Request.Verb
+	data.Request.Body = result.Request.Body
+	data.Request.Headers = result.Request.Headers
 
 	data.Response = new(VmHttpResponse)
 	data.Response.StatusCode = result.HttpResponse.StatusCode
 	data.Response.Status = result.HttpResponse.Status
 
-	return data
+	bodyBytes, err := io.ReadAll(result.HttpResponse.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	data.Response.Body = string(bodyBytes)
+
+	defer result.HttpResponse.Body.Close()
+
+	// TODO: support multiple header values per key
+	data.Response.Headers = map[string][]string{}
+
+	for k, v := range result.HttpResponse.Header {
+		if len(v) > 0 {
+			data.Response.Headers[k] = v
+
+			if k == "Content-Type" && strings.Contains(v[0], "json") {
+				err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return data, nil
 }
