@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,10 +25,11 @@ import (
 )
 
 type RoutineResult struct {
+	Routine     *Routine
 	StepResults []*RoutineStepResult
 	StartTime   time.Time
 	EndTime     time.Time
-	Error       error
+	Errors      []error
 }
 
 func (r *RoutineResult) GetElapsedMs() int64 {
@@ -36,12 +37,12 @@ func (r *RoutineResult) GetElapsedMs() int64 {
 }
 
 func (result *RoutineResult) IsPassing() bool {
-	if result.Error != nil {
+	if len(result.Errors) > 0 {
 		return false
 	}
 
 	for _, stepResult := range result.StepResults {
-		if stepResult.Error != nil {
+		if len(stepResult.Errors) > 0 {
 			return false
 		}
 
@@ -58,36 +59,97 @@ func (result *RoutineResult) IsPassing() bool {
 }
 
 func (result *RoutineResult) Print(prefix string) {
-	fmt.Printf("%sElapsedMs: %d, IsPassing: %t\n", prefix, result.GetElapsedMs(), result.IsPassing())
+	fmt.Printf("%sElapsed: %dms, IsPassing: %t\n", prefix, result.GetElapsedMs(), result.IsPassing())
 
 	for i, s := range result.StepResults {
 		s.print(i, prefix)
 	}
 }
 
+func (result *RoutineResult) GetPassFailCounts() (passed int, failed int) {
+	passed = 0
+	failed = 0
+
+	for _, v := range result.StepResults {
+		if v.SubroutineResult != nil {
+			subPassed, subFailed := v.SubroutineResult.GetPassFailCounts()
+			passed += subPassed
+			failed += subFailed
+			continue
+		}
+
+		if v.RequestResult != nil {
+
+			if v.RequestResult.Error != nil {
+				failed += 1
+			} else {
+				passed += 1
+			}
+			continue
+		}
+
+		if v.ScriptResult != nil {
+			if v.ScriptResult.Error != nil {
+				failed += 1
+			} else {
+				passed += 1
+			}
+			continue
+		}
+	}
+
+	return passed, failed
+}
+
+func (stepResult *RoutineStepResult) getName() string {
+	if stepResult.RequestResult != nil {
+		return fmt.Sprintf("%s (%s)", stepResult.RequestResult.Request.Name, stepResult.Step.Run)
+	}
+	if stepResult.SubroutineResult != nil {
+		return fmt.Sprintf("%s (%s)", stepResult.SubroutineResult.Routine.Name, stepResult.Step.Run)
+	}
+
+	return stepResult.Step.Run
+}
+
 func (stepResult *RoutineStepResult) print(i int, prefix string) {
-	fmt.Printf("%sRun %d: %s\n", prefix, i+1, stepResult.Step.Run)
-	if stepResult.Error != nil {
-		fmt.Printf("- ERROR! %s", stepResult.Error.Error())
+	if prefix == "" {
+		fmt.Printf("Running: %s\n", stepResult.getName())
+	} else {
+		fmt.Printf("%sRun %d: %s\n", prefix, i+1, stepResult.getName())
+	}
+
+	for _, error := range stepResult.Errors {
+		fmt.Printf("  [ERROR] %s\n", error.Error())
 	}
 
 	if stepResult.RequestResult != nil {
 		if stepResult.RequestResult.Error != nil {
-			fmt.Printf("%s- ERROR! %s\n", prefix, stepResult.RequestResult.Error.Error())
+			fmt.Printf("%s  [ERROR] %s\n", prefix, stepResult.RequestResult.Error.Error())
 		} else {
-			fmt.Printf("%s- status: %s\n", prefix, stepResult.RequestResult.HttpResponse.Status)
+			fmt.Printf("%s  Status: %s\n", prefix, stepResult.RequestResult.HttpResponse.Status)
+			fmt.Printf("%s  Elapsed: %dms\n", prefix, stepResult.RequestResult.GetElapsedMs())
+		}
+	}
+
+	if stepResult.ScriptResult != nil {
+		if stepResult.ScriptResult.Error != nil {
+			fmt.Printf("%s  [ERROR] %s\n", prefix, stepResult.ScriptResult.Error.Error())
+		} else {
+			fmt.Printf("%s- Output: %s\n", prefix, stepResult.ScriptResult.ScriptOutput)
+			fmt.Printf("%s- Elapsed: %dms\n", prefix, stepResult.ScriptResult.GetElapsedMs())
 		}
 	}
 
 	if stepResult.SubroutineResult != nil {
-		stepResult.SubroutineResult.Print(prefix + "- ")
+		stepResult.SubroutineResult.Print(prefix + "  ")
 	}
 }
 
 func StepError(step *RoutineStep, err error) *RoutineStepResult {
 	stepResult := new(RoutineStepResult)
 	stepResult.Step = step
-	stepResult.Error = err
+	stepResult.Errors = append(stepResult.Errors, err)
 
 	return stepResult
 }
@@ -123,12 +185,18 @@ type RoutineStepResult struct {
 	RequestResult    *naprequest.RequestResult
 	SubroutineResult *RoutineResult
 	ScriptResult     *ScriptResult
-	Error            error
+	Errors           []error
 }
 
 type ScriptResult struct {
 	ScriptOutput []string
+	StartTime    time.Time
+	EndTime      time.Time
 	Error        error
+}
+
+func (r *ScriptResult) GetElapsedMs() int64 {
+	return r.EndTime.Sub(r.StartTime).Milliseconds()
 }
 
 func ScriptResultError(err error) *ScriptResult {

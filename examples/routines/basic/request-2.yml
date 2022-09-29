@@ -1,0 +1,8 @@
+name: tripadvisor landing page
+type: request
+path: https://www.tripadvisor.com
+verb: GET
+timeoutSeconds: 1
+headers:
+  Accept: application/json
+  Content-Type: application/json

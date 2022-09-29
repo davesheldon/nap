@@ -1,0 +1,7 @@
+type: routine
+name: main routine
+timeoutSeconds: 1
+steps:
+  - run: subroutine-1.yml
+  - run: request-1.yml
+  - run: request-2.yml

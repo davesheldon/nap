@@ -4,5 +4,5 @@ if (result.Error) {
     nap.fail(result.Error.Error())
 }
 else {
-    console.log(JSON.stringify(nap.http))
+    //console.log(JSON.stringify(nap.http))
 }

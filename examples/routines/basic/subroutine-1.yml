@@ -1,0 +1,5 @@
+type: routine
+name: subroutine
+timeoutSeconds: 1
+steps:
+  - run: script.js
