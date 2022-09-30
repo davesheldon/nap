@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/naprunner"
@@ -37,6 +38,8 @@ var runCmd = &cobra.Command{
 	Long:  `The run command executes a request, routine or script at the path provided.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+
 		runConfig := newRunConfig(cmd, args)
 
 		environmentVariables, err := loadEnvironment(runConfig)
@@ -44,17 +47,29 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		ctx := napcontext.New(environmentVariables, runConfig.TargetDir)
+		napCtx := napcontext.New(environmentVariables, runConfig.TargetDir)
 
-		routineResult := naprunner.RunPath(ctx, runConfig.TargetName)
+		routineResult := naprunner.RunPath(napCtx, runConfig.TargetName)
 
-		if routineResult.Error != nil {
-			fmt.Printf("error: %s\n", routineResult.Error.Error())
-		} else {
-			fmt.Println("success")
+		end := time.Now()
+
+		if runConfig.Verbose {
+			routineResult.Print("")
 		}
 
-		return nil
+		for _, error := range routineResult.Errors {
+			fmt.Printf("[ERROR] %s\n", error.Error())
+		}
+
+		passed, failed := routineResult.GetPassFailCounts()
+
+		if failed == 0 {
+			fmt.Printf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+			return nil
+		} else {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+		}
 	},
 }
 

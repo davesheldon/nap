@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import (
 )
 
 type Request struct {
+	Name                  string
 	Path                  string
 	Verb                  string
 	Body                  string
@@ -35,6 +36,7 @@ type Request struct {
 	PostRequestScript     string
 	PreRequestScriptFile  string
 	PostRequestScriptFile string
+	TimeoutSeconds        int
 }
 
 func parse(data []byte) (*Request, error) {
@@ -65,18 +67,4 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 	data = []byte(dataAsString)
 
 	return parse(data)
-}
-
-func (r *Request) PrintStats() {
-	fmt.Println("\n\nRunning Request...")
-	fmt.Printf("Path: %s\n", r.Path)
-	fmt.Printf("Verb: %s\n", r.Verb)
-
-	for k, v := range r.Headers {
-		fmt.Printf("(Header) %s: %s\n", k, v)
-	}
-
-	if len(r.Body) > 0 {
-		fmt.Printf("Request Body: %s\n", r.Body)
-	}
 }

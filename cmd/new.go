@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,7 +58,9 @@ var newCmd = &cobra.Command{
 			}
 		}
 
-		requestTemplateData := []byte(`path: https://cat-fact.herokuapp.com/facts
+		requestTemplateData := []byte(`kind: request
+name: Request Name
+path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
 headers:
@@ -69,9 +71,10 @@ headers:
 			return err
 		}
 
-		routineTemplateData := []byte(`steps:
-  - type: request
-    name: 
+		routineTemplateData := []byte(`kind: routine
+name: Routine Name
+steps:
+  - run: routine.yml
 `)
 		if err := tryWriteFileData(path.Join(projectPath, ".templates", "routine.yml"), routineTemplateData); err != nil {
 			return err
@@ -82,7 +85,8 @@ headers:
 			return err
 		}
 
-		firstRequestData := []byte(`type: request
+		firstRequestData := []byte(`kind: request
+name: Request 1
 path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
@@ -94,7 +98,8 @@ headers:
 			return err
 		}
 
-		firstRoutineData := []byte(`type: routine
+		firstRoutineData := []byte(`kind: routine
+name: Routine 1
 steps:
   - run: ../requests/request-1.yml
 `)

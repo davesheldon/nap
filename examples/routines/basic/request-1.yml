@@ -1,0 +1,8 @@
+kind: request
+name: integrity data contact form
+path: https://www.integrity-data.com/contact/
+verb: GET
+timeoutSeconds: 1
+headers:
+  Accept: application/json
+  Content-Type: application/json

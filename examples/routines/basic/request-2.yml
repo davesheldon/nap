@@ -1,8 +1,8 @@
 kind: request
-name: Cat Facts
-path: https://cat-fact.herokuapp.com/facts
+name: tripadvisor landing page
+path: https://www.tripadvisor.com
 verb: GET
-body:
+timeoutSeconds: 1
 headers:
   Accept: application/json
   Content-Type: application/json

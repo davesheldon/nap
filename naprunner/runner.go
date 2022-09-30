@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,9 @@ import (
 
 func RunPath(ctx *napcontext.Context, path string) *naproutine.RoutineResult {
 	routine := naproutine.NewRoutine(ctx, path)
-	return runRoutine(ctx, routine, nil, nil)
+	result := runRoutine(ctx, routine, nil, nil)
+	populateErrors(result)
+	return result
 }
 
 func runScript(ctx *napcontext.Context, path string) *naproutine.ScriptResult {
@@ -53,17 +55,20 @@ func runScript(ctx *napcontext.Context, path string) *naproutine.ScriptResult {
 }
 
 func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptResult {
+	result := new(naproutine.ScriptResult)
+
+	result.StartTime = time.Now()
 	_, err := ctx.ScriptVm.Run(script)
+	result.EndTime = time.Now()
 
 	output := ctx.ScriptOutput
 	ctx.ScriptOutput = []string{}
 
-	result := new(naproutine.ScriptResult)
 	result.Error = err
 	result.ScriptOutput = output
 
 	if result.Error == nil && ctx.ScriptFailure {
-		result.Error = fmt.Errorf("script failure: %s", ctx.ScriptFailureMessage)
+		result.Error = fmt.Errorf(ctx.ScriptFailureMessage)
 	}
 
 	return result
@@ -94,6 +99,10 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 	result.StartTime = time.Now()
 
 	result.HttpResponse, result.Error = executeHttp(request)
+
+	if result.HttpResponse != nil && result.HttpResponse.StatusCode >= 400 {
+		result.Error = errors.New(fmt.Sprintf("HTTP %s", result.HttpResponse.Status))
+	}
 
 	result.EndTime = time.Now()
 
@@ -126,6 +135,10 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 func executeHttp(r *naprequest.Request) (*http.Response, error) {
 	client := &http.Client{}
+
+	if r.TimeoutSeconds > 0 {
+		client.Timeout = time.Duration(r.TimeoutSeconds) * time.Second
+	}
 
 	var content io.Reader
 
@@ -164,6 +177,7 @@ func fileExists(path string) bool {
 
 func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep *naproutine.RoutineStep, ch chan *naproutine.RoutineStepResult) *naproutine.RoutineResult {
 	result := new(naproutine.RoutineResult)
+	result.Routine = routine
 	result.StartTime = time.Now()
 
 	waitCount := 0
@@ -173,7 +187,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 	err := setupVm(ctx)
 	if err != nil {
 		result.EndTime = time.Now()
-		result.Error = err
+		result.Errors = append(result.Errors, err)
 		return result
 	}
 
@@ -246,29 +260,32 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	result.EndTime = time.Now()
 
+	return result
+}
+
+func populateErrors(result *naproutine.RoutineResult) {
 	for _, v := range result.StepResults {
-		if v.Error != nil {
-			result.Error = v.Error
-			break
+		if v.SubroutineResult != nil {
+			populateErrors(v.SubroutineResult)
+			result.Errors = append(result.Errors, v.SubroutineResult.Errors...)
+			continue
+		}
+
+		if len(v.Errors) > 0 {
+			result.Errors = append(result.Errors, v.Errors...)
+			continue
 		}
 
 		if v.RequestResult != nil && v.RequestResult.Error != nil {
-			result.Error = v.RequestResult.Error
-			break
+			result.Errors = append(result.Errors, errors.New(fmt.Sprintf("%s: %s", v.RequestResult.Request.Name, v.RequestResult.Error)))
+			continue
 		}
 
 		if v.ScriptResult != nil && v.ScriptResult.Error != nil {
-			result.Error = v.ScriptResult.Error
-			break
-		}
-
-		if v.SubroutineResult != nil && v.SubroutineResult.Error != nil {
-			result.Error = v.ScriptResult.Error
-			break
+			result.Errors = append(result.Errors, errors.New(fmt.Sprintf("%s: %s", v.Step.Run, v.ScriptResult.Error)))
+			continue
 		}
 	}
-
-	return result
 }
 
 func peekType(path string) (string, error) {
@@ -290,7 +307,7 @@ func peekType(path string) (string, error) {
 		return "", fmt.Errorf("type of file unclear: %s (cannot unmarshal: %s)", path, err.Error())
 	}
 
-	if val, ok := yamlMap["type"]; ok {
+	if val, ok := yamlMap["kind"]; ok {
 		return val.(string), nil
 	} else {
 		return "", fmt.Errorf("type of file unclear: %s", path)
@@ -436,31 +453,33 @@ func mapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 	data.Request.Body = result.Request.Body
 	data.Request.Headers = result.Request.Headers
 
-	data.Response = new(VmHttpResponse)
-	data.Response.StatusCode = result.HttpResponse.StatusCode
-	data.Response.Status = result.HttpResponse.Status
+	if result.HttpResponse != nil {
+		data.Response = new(VmHttpResponse)
+		data.Response.StatusCode = result.HttpResponse.StatusCode
+		data.Response.Status = result.HttpResponse.Status
 
-	bodyBytes, err := io.ReadAll(result.HttpResponse.Body)
+		bodyBytes, err := io.ReadAll(result.HttpResponse.Body)
 
-	if err != nil {
-		return nil, err
-	}
+		if err != nil {
+			return nil, err
+		}
 
-	data.Response.Body = string(bodyBytes)
+		data.Response.Body = string(bodyBytes)
 
-	defer result.HttpResponse.Body.Close()
+		defer result.HttpResponse.Body.Close()
 
-	// TODO: support multiple header values per key
-	data.Response.Headers = map[string][]string{}
+		// TODO: support multiple header values per key
+		data.Response.Headers = map[string][]string{}
 
-	for k, v := range result.HttpResponse.Header {
-		if len(v) > 0 {
-			data.Response.Headers[k] = v
+		for k, v := range result.HttpResponse.Header {
+			if len(v) > 0 {
+				data.Response.Headers[k] = v
 
-			if k == "Content-Type" && strings.Contains(v[0], "json") {
-				err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)
-				if err != nil {
-					return nil, err
+				if k == "Content-Type" && strings.Contains(v[0], "json") {
+					err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
