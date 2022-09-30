@@ -307,7 +307,7 @@ func peekType(path string) (string, error) {
 		return "", fmt.Errorf("type of file unclear: %s (cannot unmarshal: %s)", path, err.Error())
 	}
 
-	if val, ok := yamlMap["type"]; ok {
+	if val, ok := yamlMap["kind"]; ok {
 		return val.(string), nil
 	} else {
 		return "", fmt.Errorf("type of file unclear: %s", path)

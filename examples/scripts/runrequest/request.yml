@@ -1,4 +1,5 @@
-type: request
+kind: request
+name: Cat Facts
 path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:

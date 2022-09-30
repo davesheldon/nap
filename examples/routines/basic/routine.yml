@@ -1,4 +1,4 @@
-type: routine
+kind: routine
 name: main routine
 timeoutSeconds: 1
 steps:

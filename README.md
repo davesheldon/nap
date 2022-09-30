@@ -78,7 +78,8 @@ $ nap generate request requests/my-request.yml
 By default, this creates a file called `my-request.yml` inside the `requests` folder like the following:
 
 ```yml
-type: request
+kind: request
+name: Cat Facts
 path: https://cat-fact.herokuapp.com/facts
 verb: GET
 body:
@@ -103,10 +104,10 @@ The `env` folder contains a default YAML configuration file: `default.yml`. By d
 
 requests/my-request.yml:
 ```yml
-type: request
+kind: request
+name: Cat Facts
 path: ${baseurl}/facts
 verb: GET
-type: request
 body: ""
 headers:
     - Accept: application/json
@@ -140,10 +141,10 @@ Scripts can be run before or after a request:
 
 request.yml:
 ```yml
-type: request
+kind: request
+name: Cat Facts
 path: ${baseurl}/facts
 verb: GET
-type: request
 pre-request-script-file: ../scripts/script-1.js
 post-request-script-file: ../scripts/script-2.js
 headers:
@@ -154,10 +155,10 @@ Scripts may also be inlined:
 
 request.yml:
 ```yml
-type: request
+kind: request
+name: Cat Facts
 path: ${baseurl}/facts
 verb: GET
-type: request
 pre-request-script: |
   console.log('Hello, World!');
 post-request-script: |
@@ -192,7 +193,8 @@ $ nap generate routine routines/my-routine.yml
 By default, this creates a file called `my-routine.yml` inside the `routines` folder like the following:
 
 ```yml
-type: routine
+kind: routine
+name: Basic Routine
 steps:
   - run: ../requests/my-request.yml
 ```
@@ -215,7 +217,8 @@ $ nap run routines/my-routine.yml
 A **subroutine** is a routine step that runs another routine. In this way you may use a single routine to run entire suites of tests:
 
 ```yml
-type: routine
+kind: routine
+name: Routine With Subroutines
 steps:
   - run: my-routine.yml
   - run: my-other-routine.yml
@@ -233,7 +236,8 @@ Nap is built upon a concurrency model where, by default, each routine runs in a 
 Each routine-thread in Nap receives a snapshot of the latest set of environment variables (including any changes made via scripts on the parent routine up until that point). This allows for scenarios such as performing authentication up-front, setting a token as a variable, and then running multiple routines in parallel that rely on that token. For example:
 
 ```yml
-type: routine
+kind: routine
+name: Authenticated Routine
 steps:
   - run: ../requests/auth.yml
   - run: authenticated-routine-1.yml

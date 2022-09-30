@@ -63,9 +63,13 @@ var runCmd = &cobra.Command{
 
 		passed, failed := routineResult.GetPassFailCounts()
 
-		fmt.Printf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
-
-		return nil
+		if failed == 0 {
+			fmt.Printf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+			return nil
+		} else {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+		}
 	},
 }
 

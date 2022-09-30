@@ -1,5 +1,5 @@
+kind: request
 name: tripadvisor landing page
-type: request
 path: https://www.tripadvisor.com
 verb: GET
 timeoutSeconds: 1

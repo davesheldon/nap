@@ -1,4 +1,4 @@
-type: routine
+kind: routine
 name: subroutine
 timeoutSeconds: 1
 steps:
