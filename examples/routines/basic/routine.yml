@@ -2,5 +2,6 @@ kind: routine
 name: main routine
 steps:
   - run: request-1.yml
-  # - run: request-2.yml
-  # - run: subroutine-1.yml
+  - run: request-2.yml
+  - run: subroutine-1.yml
+  - run: subroutine-2.yml

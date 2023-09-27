@@ -1,0 +1,5 @@
+kind: routine
+name: example subroutine
+timeoutSeconds: 1
+steps:
+  - run: request-1.yml

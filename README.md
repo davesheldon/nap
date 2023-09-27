@@ -2,20 +2,57 @@
 
 # Nap
 
-Nap is a _FAST_, file-based framework for creating and running integration tests over HTTP.
+Nap is a _FAST_, file-based command-line interface (CLI) for executing HTTP tests, using plain old YAML. 
 
-# Table of Contents
+Here's an example of a request in Nap:
 
-- <font size="4">[Installation Options](#installation-options)</font>
-- <font size="4">[Getting Started](#getting-started)</font>
-- <font size="4">[Requests](#requests)</font>
-  - <font size="4">[Asserts](#asserts)</font>
-  - <font size="4">[Captures](#captures)</font>
-- <font size="4">[Environments](#environments)</font>
-- <font size="4">[Scripts](#scripts)</font>
-- <font size="4">[Routines](#routines)</font>
+`./request-1.yml`
+```yml
+kind: request
+name: Cat Breeds - Assertion/Capture Testing
+path: https://catfact.ninja/breeds
+asserts: # failed asserts go to stderr
+  - status == 200
+  - duration < 1000
+  - header Content-Type == application/json
+  - jsonpath $.data[0].breed matches ^Abyss.+
+captures: # captures can be used in later requests using the ${variable} syntax
+  firstBreed: jsonpath $.data[0].breed
+  secondBreed: jsonpath $.data[1].breed
+```
+
+Let's run it:
+
+```bash
+$ nap run ./request-1.yml
+Run finished in 297ms. 1/1 succeeded.
+```
+
+Easy!
+
+What makes Nap _FAST_? Routines make Nap _FAST_. Here's what a routine looks like in Nap:
+
+`./routine.yml`
+```yml
+kind: routine
+name: main routine
+steps:
+  - run: request-1.yml
+  - run: request-2.yml
+  - run: sub-routine-1.yml # yep, you can call routines from routines.
+  - run: sub-routine-2.yml # additional sub-routines run in PARALLEL 😱
+```
+
+We run routines the same way we run requests:
+
+```bash
+$ nap run ./routine.yml
+Run finished in 699ms. 4/4 succeeded.
+```
 
 # Installation Options
+
+Ready to install? Here are your options.
 
 ## Windows .exe
 
@@ -35,13 +72,14 @@ $ cd nap
 $ go install
 ```
 
+
 # Getting Started
 
-Follow these steps to get to work.
+Follow these steps to get to work (or just start creating files and running them, Nap won't be mad).
 
 ## Starting a New Project
 
-To create a new project, run the `new` command:
+To create a new project (not required, but enables some QoL features, such as templates), run the `new` command:
 
 ```bash
 $ nap new my-project

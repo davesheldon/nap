@@ -1,17 +1,11 @@
 kind: request
+name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
 asserts:
-  - duration > 0
+  - status == 200
   - duration < 1000
-  - duration >= 0
-  - duration <= 1000
   - header Content-Type == application/json
   - jsonpath $.data[0].breed matches ^Abyss.+
-  - jsonpath $.data[0].breed contains byssi
-  - jsonpath $.data[0].breed startswith Ab
-  - jsonpath $.data[0].breed endswith ian
 captures:
-  myStatus: status
-  myDuration: duration
   firstBreed: jsonpath $.data[0].breed
   secondBreed: jsonpath $.data[1].breed
