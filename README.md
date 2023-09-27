@@ -17,7 +17,7 @@ Nap is a _FAST_, file-based framework for creating and running integration tests
 
 # Installation Options
 
-## Windows Download
+## Windows .exe
 
 64-bit zip archive: [Download](https://raw.githubusercontent.com/davesheldon/nap/main/dist/windows/amd64/nap.zip)
 
