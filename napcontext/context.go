@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import (
 
 type Context struct {
 	ScriptVm             *otto.Otto
+	EnvironmentName      string
 	EnvironmentVariables map[string]string
 	ScriptFailure        bool
 	ScriptFailureMessage string
@@ -30,8 +31,10 @@ type Context struct {
 	WorkingDirectory     string
 }
 
-func New(environmentVariables map[string]string, workingDirectory string) *Context {
+func New(workingDirectory string, environmentName string, environmentVariables map[string]string) *Context {
 	ctx := new(Context)
+
+	ctx.EnvironmentVariables = make(map[string]string)
 
 	for k, v := range environmentVariables {
 		ctx.EnvironmentVariables[k] = v
@@ -45,5 +48,5 @@ func New(environmentVariables map[string]string, workingDirectory string) *Conte
 }
 
 func (ctx *Context) Clone(workingDirectory string) *Context {
-	return New(ctx.EnvironmentVariables, workingDirectory)
+	return New(workingDirectory, ctx.EnvironmentName, ctx.EnvironmentVariables)
 }

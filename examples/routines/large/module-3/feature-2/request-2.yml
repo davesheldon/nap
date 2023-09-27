@@ -1,6 +1,6 @@
 kind: request
-name: greenshades home page
-path: https://www.greenshades.com
+name: request-2
+path: https://www.google.com
 verb: GET
 timeoutSeconds: 1
 headers:

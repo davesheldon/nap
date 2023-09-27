@@ -19,7 +19,6 @@ package naprunner
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -29,10 +28,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davesheldon/nap/napassert"
+	"github.com/davesheldon/nap/napcapture"
 	"github.com/davesheldon/nap/napcontext"
+	"github.com/davesheldon/nap/napquery"
 	"github.com/davesheldon/nap/naprequest"
 	"github.com/davesheldon/nap/naproutine"
-	"github.com/robertkrimen/otto"
+	"github.com/davesheldon/nap/napscript"
 	"gopkg.in/yaml.v2"
 )
 
@@ -106,7 +108,7 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 	result.EndTime = time.Now()
 
-	err := setVmHttpData(ctx, result)
+	vmData, err := napscript.SetVmHttpData(ctx, result)
 	if err != nil {
 		result.Error = fmt.Errorf("error setting js http result: %w", err)
 		return result
@@ -126,6 +128,33 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 		if scriptResult.Error != nil {
 			result.Error = fmt.Errorf("Post-Request Script File Error: %w", scriptResult.Error)
+			return result
+		}
+	}
+
+	asserts := request.GetAsserts()
+
+	for _, v := range asserts {
+
+		actual, err := napquery.Eval(v.Query, vmData)
+
+		if err != nil {
+			result.Error = err
+			return result
+		}
+
+		err = napassert.AssertResponse(v, actual)
+
+		if err != nil {
+			result.Error = err
+			return result
+		}
+	}
+
+	for variable, query := range request.Captures {
+		err := napcapture.CaptureResponse(variable, query, ctx, vmData)
+		if err != nil {
+			result.Error = err
 			return result
 		}
 	}
@@ -184,7 +213,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	childCh := make(chan *naproutine.RoutineStepResult)
 
-	err := setupVm(ctx)
+	err := napscript.SetupVm(ctx, RunPath)
 	if err != nil {
 		result.EndTime = time.Now()
 		result.Errors = append(result.Errors, err)
@@ -203,7 +232,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			break
 		}
 
-		stepType, err := peekType(stepPath)
+		stepType, err := peekType(stepPath, ctx)
 
 		if err != nil {
 			stepResult = naproutine.StepError(step, err)
@@ -288,7 +317,7 @@ func populateErrors(result *naproutine.RoutineResult) {
 	}
 }
 
-func peekType(path string) (string, error) {
+func peekType(path string, ctx *napcontext.Context) (string, error) {
 	if filepath.Ext(path) == ".js" {
 		return "script", nil
 	}
@@ -301,6 +330,15 @@ func peekType(path string) (string, error) {
 		return "", fmt.Errorf("type of file unclear: %s (cannot read file: %s)", path, err.Error())
 	}
 
+	dataAsString := string(data)
+
+	for k, v := range ctx.EnvironmentVariables {
+		variable := fmt.Sprintf("${%s}", k)
+		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
+	}
+
+	data = []byte(dataAsString)
+
 	err = yaml.Unmarshal(data, &yamlMap)
 
 	if err != nil {
@@ -312,178 +350,4 @@ func peekType(path string) (string, error) {
 	} else {
 		return "", fmt.Errorf("type of file unclear: %s", path)
 	}
-}
-
-func setupVm(ctx *napcontext.Context) error {
-
-	err := ctx.ScriptVm.Set("napRun", func(call otto.FunctionCall) otto.Value {
-
-		path := call.Argument(0).String()
-
-		result := RunPath(ctx, path)
-
-		v, _ := ctx.ScriptVm.ToValue(result)
-		return v
-	})
-
-	if err != nil {
-		return err
-	}
-
-	err = ctx.ScriptVm.Set("napEnvSet", func(call otto.FunctionCall) otto.Value {
-		ctx.EnvironmentVariables[call.Argument(0).String()] = call.Argument(1).String()
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return err
-	}
-
-	err = ctx.ScriptVm.Set("napEnvGet", func(call otto.FunctionCall) otto.Value {
-		result, _ := ctx.ScriptVm.ToValue(ctx.EnvironmentVariables[call.Argument(0).String()])
-		return result
-	})
-
-	if err != nil {
-		return err
-	}
-
-	err = ctx.ScriptVm.Set("napFail", func(call otto.FunctionCall) otto.Value {
-		vals := []string{}
-
-		for _, v := range call.ArgumentList {
-			vals = append(vals, v.String())
-		}
-
-		ctx.ScriptFailure = true
-		ctx.ScriptFailureMessage = strings.Join(vals, " ")
-
-		return otto.Value{}
-	})
-
-	if err != nil {
-		return err
-	}
-
-	ctx.ScriptVm.Set("__log__", func(call otto.FunctionCall) otto.Value {
-		vals := []string{}
-
-		for _, v := range call.ArgumentList {
-			vals = append(vals, v.String())
-		}
-
-		ctx.ScriptOutput = append(ctx.ScriptOutput, strings.Join(vals, " "))
-
-		return otto.Value{}
-	})
-
-	ctx.ScriptVm.Run("console.log = __log__;")
-
-	_, err = ctx.ScriptVm.Run(`
-var nap = { 
-	env: { 
-		get: napEnvGet, 
-		set: napEnvSet
-	}, 
-	run: napRun,
-	fail: napFail
-};
-
-napEnvGet = undefined;
-napEnvSet = undefined;
-napRun = undefined;
-napFail = undefined;
-`)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func setVmHttpData(ctx *napcontext.Context, result *naprequest.RequestResult) error {
-	data, err := mapVmHttpData(result)
-
-	if err != nil {
-		return err
-	}
-
-	jsData, err := json.Marshal(&data)
-	if err != nil {
-		return err
-	}
-	// have to do it this way for now because otto won't serialize it properly
-	_, err = ctx.ScriptVm.Run(fmt.Sprintf("nap.http = %s;", string(jsData)))
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-type VmHttpData struct {
-	Request  *VmHttpRequest  `json:"request"`
-	Response *VmHttpResponse `json:"response"`
-}
-
-type VmHttpRequest struct {
-	Url     string            `json:"url"`
-	Verb    string            `json:"verb"`
-	Body    string            `json:"body"`
-	Headers map[string]string `json:"headers"`
-}
-
-type VmHttpResponse struct {
-	StatusCode int                 `json:"statusCode"`
-	Status     string              `json:"status"`
-	Body       string              `json:"body"`
-	JsonBody   interface{}         `json:"jsonBody"`
-	Headers    map[string][]string `json:"headers"`
-}
-
-func mapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
-	data := new(VmHttpData)
-
-	data.Request = new(VmHttpRequest)
-	data.Request.Url = result.Request.Path
-	data.Request.Verb = result.Request.Verb
-	data.Request.Body = result.Request.Body
-	data.Request.Headers = result.Request.Headers
-
-	if result.HttpResponse != nil {
-		data.Response = new(VmHttpResponse)
-		data.Response.StatusCode = result.HttpResponse.StatusCode
-		data.Response.Status = result.HttpResponse.Status
-
-		bodyBytes, err := io.ReadAll(result.HttpResponse.Body)
-
-		if err != nil {
-			return nil, err
-		}
-
-		data.Response.Body = string(bodyBytes)
-
-		defer result.HttpResponse.Body.Close()
-
-		// TODO: support multiple header values per key
-		data.Response.Headers = map[string][]string{}
-
-		for k, v := range result.HttpResponse.Header {
-			if len(v) > 0 {
-				data.Response.Headers[k] = v
-
-				if k == "Content-Type" && strings.Contains(v[0], "json") {
-					err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-		}
-	}
-
-	return data, nil
 }

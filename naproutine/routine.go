@@ -73,6 +73,10 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Routine, error) {
 		return nil, err
 	}
 
+	if routine.Name == "" {
+		routine.Name = path
+	}
+
 	return routine, nil
 }
 

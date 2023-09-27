@@ -1,5 +1,5 @@
 kind: routine
-name: subroutine
+name: example subroutine
 timeoutSeconds: 1
 steps:
   - run: script.js

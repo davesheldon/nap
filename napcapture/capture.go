@@ -13,31 +13,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-requestresult.go - this data structure represents the results of an executed Nap request
+assert.go - this file contains types and logic for evaluating assertions
 */
-package naprequest
+package napcapture
 
 import (
-	"net/http"
-	"time"
+	"github.com/davesheldon/nap/napcontext"
+	"github.com/davesheldon/nap/napquery"
+	"github.com/davesheldon/nap/napscript"
 )
 
-type RequestResult struct {
-	Request           *Request
-	HttpResponse      *http.Response
-	PreRequestResult  string
-	PostRequestResult string
-	StartTime         time.Time
-	EndTime           time.Time
-	Error             error
-}
+func CaptureResponse(variable string, query string, ctx *napcontext.Context, vmData *napscript.VmHttpData) error {
+	actual, err := napquery.Eval(query, vmData)
 
-func (r *RequestResult) GetElapsedMs() int64 {
-	return r.EndTime.Sub(r.StartTime).Milliseconds()
-}
+	if err != nil {
+		return err
+	}
 
-func ResultError(r *Request, err error) *RequestResult {
-	result := new(RequestResult)
-	result.Error = err
-	return result
+	ctx.EnvironmentVariables[variable] = actual
+	return nil
 }

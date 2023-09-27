@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/naprequest"
 )
 
@@ -58,11 +59,19 @@ func (result *RoutineResult) IsPassing() bool {
 	return true
 }
 
-func (result *RoutineResult) Print(prefix string) {
+func (result *RoutineResult) Print(prefix string, context *napcontext.Context) {
+	if prefix == "" && result.Routine != nil && result.Routine.Name != "" {
+		fmt.Println("------------------------------------------------------")
+		fmt.Printf("Routine: %s\n", result.Routine.Name)
+		fmt.Printf("Directory: %s\n", context.WorkingDirectory)
+		fmt.Printf("Environment: %s\n", context.EnvironmentName)
+		fmt.Println("------------------------------------------------------")
+	}
+
 	fmt.Printf("%sElapsed: %dms, IsPassing: %t\n", prefix, result.GetElapsedMs(), result.IsPassing())
 
 	for i, s := range result.StepResults {
-		s.print(i, prefix)
+		s.print(i, prefix, context)
 	}
 }
 
@@ -112,12 +121,8 @@ func (stepResult *RoutineStepResult) getName() string {
 	return stepResult.Step.Run
 }
 
-func (stepResult *RoutineStepResult) print(i int, prefix string) {
-	if prefix == "" {
-		fmt.Printf("Running: %s\n", stepResult.getName())
-	} else {
-		fmt.Printf("%sRun %d: %s\n", prefix, i+1, stepResult.getName())
-	}
+func (stepResult *RoutineStepResult) print(i int, prefix string, context *napcontext.Context) {
+	fmt.Printf("%sRun %d: %s\n", prefix, i+1, stepResult.getName())
 
 	for _, error := range stepResult.Errors {
 		fmt.Printf("  [ERROR] %s\n", error.Error())
@@ -136,13 +141,16 @@ func (stepResult *RoutineStepResult) print(i int, prefix string) {
 		if stepResult.ScriptResult.Error != nil {
 			fmt.Printf("%s  [ERROR] %s\n", prefix, stepResult.ScriptResult.Error.Error())
 		} else {
-			fmt.Printf("%s- Output: %s\n", prefix, stepResult.ScriptResult.ScriptOutput)
+			for _, v := range stepResult.ScriptResult.ScriptOutput {
+				fmt.Printf("%s- Output: %s\n", prefix, v)
+			}
+
 			fmt.Printf("%s- Elapsed: %dms\n", prefix, stepResult.ScriptResult.GetElapsedMs())
 		}
 	}
 
 	if stepResult.SubroutineResult != nil {
-		stepResult.SubroutineResult.Print(prefix + "  ")
+		stepResult.SubroutineResult.Print(prefix+"  ", context)
 	}
 }
 

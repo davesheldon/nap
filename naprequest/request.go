@@ -20,8 +20,10 @@ package naprequest
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
+	"github.com/davesheldon/nap/napassert"
 	"github.com/davesheldon/nap/napcontext"
 	"gopkg.in/yaml.v2"
 )
@@ -37,6 +39,13 @@ type Request struct {
 	PreRequestScriptFile  string
 	PostRequestScriptFile string
 	TimeoutSeconds        int
+	Captures              map[string]string
+	Asserts               []string
+}
+
+type ResponseCapture struct {
+	Variable string
+	Query    string
 }
 
 func parse(data []byte) (*Request, error) {
@@ -63,8 +72,26 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 		variable := fmt.Sprintf("${%s}", k)
 		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
 	}
-
 	data = []byte(dataAsString)
-
 	return parse(data)
+}
+
+var expr = fmt.Sprintf("^(?P<Query>.+) (?P<Predicate>%s) \"?(?P<Value>.+)\"?$", strings.Join(napassert.GetPredicates(), "|"))
+var re = regexp.MustCompile(expr)
+
+func (request *Request) GetAsserts() []*napassert.Assert {
+	var asserts []*napassert.Assert = make([]*napassert.Assert, 0)
+	for _, v := range request.Asserts {
+		matches := re.FindStringSubmatch(v)
+
+		query := matches[1]
+		predicate := matches[2]
+		expectation := matches[3]
+
+		assert := napassert.NewAssert(query, predicate, expectation)
+
+		asserts = append(asserts, assert)
+	}
+
+	return asserts
 }

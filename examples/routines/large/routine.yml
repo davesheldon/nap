@@ -1,0 +1,6 @@
+kind: routine
+name: main
+steps:
+  - run: module-1/routine.yml
+  - run: module-2/routine.yml
+  - run: module-3/routine.yml

@@ -1,6 +1,6 @@
 kind: request
-name: greenshades home page
-path: https://www.greenshades.com
+name: module-3-feature-1-request-2
+path: https://www.integrity-data.com/contact/
 verb: GET
 timeoutSeconds: 1
 headers:

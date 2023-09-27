@@ -47,18 +47,22 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		napCtx := napcontext.New(environmentVariables, runConfig.TargetDir)
+		napCtx := napcontext.New(runConfig.TargetDir, runConfig.Environment, environmentVariables)
 
 		routineResult := naprunner.RunPath(napCtx, runConfig.TargetName)
 
 		end := time.Now()
 
 		if runConfig.Verbose {
-			routineResult.Print("")
-		}
-
-		for _, error := range routineResult.Errors {
-			fmt.Printf("[ERROR] %s\n", error.Error())
+			if len(routineResult.StepResults) == 1 && routineResult.StepResults[0].SubroutineResult != nil {
+				routineResult.StepResults[0].SubroutineResult.Print("", napCtx)
+			} else {
+				routineResult.Print("", napCtx)
+			}
+		} else {
+			for _, error := range routineResult.Errors {
+				fmt.Printf("[ERROR] %s\n", error.Error())
+			}
 		}
 
 		passed, failed := routineResult.GetPassFailCounts()

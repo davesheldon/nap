@@ -9,7 +9,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+require github.com/PaesslerAG/gval v1.0.0 // indirect
+
 require (
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect

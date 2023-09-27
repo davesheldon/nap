@@ -9,6 +9,8 @@ Nap is a _FAST_, file-based framework for creating and running integration tests
 - <font size="4">[Installation Options](#installation-options)</font>
 - <font size="4">[Getting Started](#getting-started)</font>
 - <font size="4">[Requests](#requests)</font>
+  - <font size="4">[Asserts](#asserts)</font>
+  - <font size="4">[Captures](#captures)</font>
 - <font size="4">[Environments](#environments)</font>
 - <font size="4">[Scripts](#scripts)</font>
 - <font size="4">[Routines](#routines)</font>
@@ -80,7 +82,7 @@ By default, this creates a file called `my-request.yml` inside the `requests` fo
 ```yml
 kind: request
 name: Cat Facts
-path: https://cat-fact.herokuapp.com/facts
+path: https://catfact.ninja//facts
 verb: GET
 body:
 headers:
@@ -97,6 +99,52 @@ To run a specific request, use the `run` command as follows:
 $ nap run requests/my-request.yml
 - requests/my-request.yml: 200 OK
 ```
+
+## Asserts
+
+Nap supports a variety of assertions. Here is an example containing all the possible usages:
+
+```yml
+kind: request
+name: Cat Breeds - Assertion Example
+path: https://catfact.ninja/breeds
+asserts:
+  - status == 200
+  - duration > 0
+  - duration < 1000
+  - duration >= 0
+  - duration <= 1000
+  - header Content-Type == application/json
+  - jsonpath $.data[0].breed matches ^Abyss.+
+  - jsonpath $.data[0].breed contains byssi
+  - jsonpath $.data[0].breed startswith Ab
+  - jsonpath $.data[0].breed endswith ian
+```
+
+Asserts are broken up into 3 parts: query, predicate and expectation. Consider the example:
+
+```yml
+jsonpath $.data[0].breed matches ^Abyss.+
+```
+
+In this example, `jsonpath $.data[0].breed` is the query, `matches` is the predicate and `^Abyss.+` is the expectation.
+
+## Captures
+
+Captures allow us to evaluate a `query` against the response and save it to a variable. Here is an example of the usage:
+
+```yml
+kind: request
+name: Cat Breeds - Capture Example
+path: https://catfact.ninja/breeds
+captures:
+  myStatus: status
+  myDuration: duration
+  firstBreed: jsonpath $.data[0].breed
+  secondBreed: jsonpath $.data[1].breed
+```
+
+This is especially useful for test runs where an auth token needs to be requested and re-used or where an entity is created and an Id needs to be stored.
 
 # Environments
 
@@ -115,7 +163,7 @@ headers:
 
 env/default.yml:
 ```yml
-baseurl: https://cat-fact.herokuapp.com
+baseurl: https://catfact.ninja
 ```
 
 You may create new configurations either by adding a .yml file manually to the `env` folder or via the `generate` command:
