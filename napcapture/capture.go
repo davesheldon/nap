@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-assert.go - this file contains types and logic for evaluating assertions
+capture.go - this file contains logic for evaluating captures
 */
 package napcapture
 
