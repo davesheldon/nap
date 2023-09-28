@@ -114,6 +114,14 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 		return result
 	}
 
+	for variable, query := range request.Captures {
+		err := napcapture.CaptureResponse(variable, query, ctx, vmData)
+		if err != nil {
+			result.Error = err
+			return result
+		}
+	}
+
 	if len(request.PostRequestScript) > 0 {
 		scriptResult := runScriptInline(ctx, request.PostRequestScript)
 
@@ -145,14 +153,6 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 		err = napassert.AssertResponse(v, actual)
 
-		if err != nil {
-			result.Error = err
-			return result
-		}
-	}
-
-	for variable, query := range request.Captures {
-		err := napcapture.CaptureResponse(variable, query, ctx, vmData)
 		if err != nil {
 			result.Error = err
 			return result
