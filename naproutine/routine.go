@@ -29,7 +29,7 @@ import (
 type Routine struct {
 	Name           string
 	Steps          []*RoutineStep
-	TimeoutSeconds int
+	TimeoutSeconds int `yaml:"timeoutSeconds"`
 }
 
 type RoutineStep struct {

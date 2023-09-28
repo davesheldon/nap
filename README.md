@@ -200,7 +200,7 @@ path: ${baseurl}/facts
 verb: GET
 body: ""
 headers:
-    - Accept: application/json
+  Accept: application/json
 ```
 
 env/default.yml:
@@ -235,10 +235,10 @@ kind: request
 name: Cat Facts
 path: ${baseurl}/facts
 verb: GET
-pre-request-script-file: ../scripts/script-1.js
-post-request-script-file: ../scripts/script-2.js
+preRequestScriptFile: ../scripts/script-1.js
+postRequestScriptFile: ../scripts/script-2.js
 headers:
-    - Accept: application/json
+  Accept: application/json
 ```
 
 Scripts may also be inlined:
@@ -249,12 +249,12 @@ kind: request
 name: Cat Facts
 path: ${baseurl}/facts
 verb: GET
-pre-request-script: |
+preRequestScript: |
   console.log('Hello, World!');
-post-request-script: |
+postRequestScript: |
   console.log('Goodbye, World!');
 headers:
-    - Accept: application/json
+  Accept: application/json
 ```
 
 ## Built-in functions

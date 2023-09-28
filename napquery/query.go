@@ -55,5 +55,9 @@ func Eval(query string, vmData *napscript.VmHttpData) (string, error) {
 		return strconv.FormatInt(vmData.Response.ElapsedMs, 10), nil
 	}
 
+	if query == "body" {
+		return vmData.Response.Body, nil
+	}
+
 	return "", fmt.Errorf("Query \"%s\" not recognized.", query)
 }

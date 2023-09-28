@@ -142,10 +142,10 @@ func (stepResult *RoutineStepResult) print(i int, prefix string, context *napcon
 			fmt.Printf("%s  [ERROR] %s\n", prefix, stepResult.ScriptResult.Error.Error())
 		} else {
 			for _, v := range stepResult.ScriptResult.ScriptOutput {
-				fmt.Printf("%s- Output: %s\n", prefix, v)
+				fmt.Printf("%s  Output: %s\n", prefix, v)
 			}
 
-			fmt.Printf("%s- Elapsed: %dms\n", prefix, stepResult.ScriptResult.GetElapsedMs())
+			fmt.Printf("%s  Elapsed: %dms\n", prefix, stepResult.ScriptResult.GetElapsedMs())
 		}
 	}
 

@@ -34,18 +34,13 @@ type Request struct {
 	Verb                  string
 	Body                  string
 	Headers               map[string]string
-	PreRequestScript      string
-	PostRequestScript     string
-	PreRequestScriptFile  string
-	PostRequestScriptFile string
-	TimeoutSeconds        int
+	PreRequestScript      string `yaml:"preRequestScript"`
+	PostRequestScript     string `yaml:"postRequestScript"`
+	PreRequestScriptFile  string `yaml:"preRequestScriptFile"`
+	PostRequestScriptFile string `yaml:"postRequestScriptFile"`
+	TimeoutSeconds        int    `yaml:"timeoutSeconds"`
 	Captures              map[string]string
 	Asserts               []string
-}
-
-type ResponseCapture struct {
-	Variable string
-	Query    string
 }
 
 func parse(data []byte) (*Request, error) {
