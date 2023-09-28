@@ -61,14 +61,18 @@ func AssertResponse(assertion *Assert, actual string) error {
 
 	switch predicate {
 	case "==":
-		floatActual, err := strconv.ParseFloat(actual, 64)
-		if err != nil && actual != expectation {
-			return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
-		} else {
+		if actual != expectation {
+			floatActual, err := strconv.ParseFloat(actual, 64)
+			if err != nil {
+				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+			}
+
 			floatExpectation, err := strconv.ParseFloat(expectation, 64)
 			if err != nil {
 				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
-			} else if floatActual != floatExpectation {
+			}
+
+			if floatActual != floatExpectation {
 				return fmt.Errorf("%s of \"%f\" did not equal expected value \"%f\"", query, floatActual, floatExpectation)
 			}
 		}

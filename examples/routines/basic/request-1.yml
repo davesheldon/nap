@@ -1,5 +1,13 @@
 kind: request
 name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
-timeoutSeconds: 5
-postRequestScript: console.log('Hello World!');
+postRequestScript: |
+  console.log('Hello World!');
+asserts:
+  - status == 200
+  - duration < 1000
+  - header Content-Type == application/json
+  - jsonpath $.data[0].breed matches ^Abyss.+
+captures:
+  firstBreed: jsonpath $.data[0].breed
+  secondBreed: jsonpath $.data[1].breed
