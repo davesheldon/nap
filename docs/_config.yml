@@ -5,9 +5,6 @@ baseUrl: /nap
 url: https://davesheldon.github.io
 repository: davesheldon/nap
 permalink: pretty
-logo: "https://user-images.githubusercontent.com/7782805/147585754-36a405c8-5821-4482-963e-8a8eb75cd8e6.png"
-favicon_ico: "https://user-images.githubusercontent.com/7782805/147585754-36a405c8-5821-4482-963e-8a8eb75cd8e6.png"
-
 
 exclude:
  # from https://github.com/jekyll/jekyll/blob/master/lib/site_template/_config.yml:
