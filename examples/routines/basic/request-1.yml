@@ -1,8 +1,6 @@
 kind: request
 name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
-postRequestScript: |
-  nap.env.set("thirdBreed", nap.env.get("firstBreed"))
 asserts:
   - status == 200
   - duration < 1000

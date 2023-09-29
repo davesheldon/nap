@@ -1,5 +1,0 @@
-kind: routine
-name: main routine
-steps:
-  - run: request-1.yml
-  - run: script.js

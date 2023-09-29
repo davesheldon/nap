@@ -1,8 +1,6 @@
 kind: request
-name: greenshades home page
-path: https://www.greenshades.com
-verb: GET
-timeoutSeconds: 1
-headers:
-  Accept: application/json
-  Content-Type: application/json
+name: Cat Facts - Succeeds
+path: https://catfact.ninja/facts
+asserts:
+  - status == 200
+  - duration < 1000

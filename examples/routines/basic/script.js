@@ -1,1 +1,0 @@
-console.log("thirdBreed: " + nap.env.get("thirdBreed"))
