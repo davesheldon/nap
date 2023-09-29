@@ -9,7 +9,7 @@ nav_order: 1
 {: .fs-6 .fw-300 }
 Nap super-charges your test automation workflow with parallel execution, powerful asserts and the simplicity of file-based storage.
 
-{: .fs-8 }
+{: .fs-6 }
 [Get Started](#getting-started){: .btn .btn-primary } [View on Github](https://github.com/davesheldon/nap){: .btn }
 
 ---
