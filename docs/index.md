@@ -36,4 +36,4 @@ If you already have the Go language installed, simply run the command to install
 $ go install github.com/davesheldon/nap@latest
 ```
 
-Once you have Nap installed, go read about [The Basics](/nap/the-basics.md) to start writing your first test.
+Once you have Nap installed, go read about [The Basics](/nap/the-basics) to start writing your first test.
