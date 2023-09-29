@@ -28,7 +28,7 @@ You can download directly from the dist folder on Github, or use one of the quic
 
 [Windows 64-bit .zip](https://raw.githubusercontent.com/davesheldon/nap/main/dist/windows/amd64/nap.zip){: .btn}
 
-### Using `go get`
+### Using Go
 
 If you already have the Go language installed, simply run the command to install nap:
 
