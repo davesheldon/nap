@@ -9,7 +9,8 @@ nav_order: 1
 {: .fs-6 .fw-300 }
 Nap super-charges your test automation workflow with parallel execution, powerful asserts and the simplicity of file-based storage.
 
-[Get Started](#getting-started){: .btn } [View on Github](https://github.com/davesheldon/nap){: .btn }
+{: .fs-8 }
+[Get Started](#getting-started){: .btn .btn-green } [View on Github](https://github.com/davesheldon/nap){: .btn }
 
 ---
 
@@ -34,3 +35,5 @@ If you already have the Go language installed, simply run the command to install
 ```bash
 $ go install github.com/davesheldon/nap@latest
 ```
+
+Once you have Nap installed, head on over to the Basics
