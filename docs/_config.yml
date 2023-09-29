@@ -5,6 +5,7 @@ baseUrl: /nap
 url: https://davesheldon.github.io
 repository: davesheldon/nap
 permalink: pretty
+nav_footer_custom: "&nbsp;"
 
 exclude:
  # from https://github.com/jekyll/jekyll/blob/master/lib/site_template/_config.yml:
