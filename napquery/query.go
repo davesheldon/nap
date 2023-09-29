@@ -28,6 +28,11 @@ import (
 )
 
 func Eval(query string, vmData *napscript.VmHttpData) (string, error) {
+	if vmData == nil || vmData.Response == nil {
+		// return empty here instead of erroring in case this assert is testing for absence of a value
+		return "", nil
+	}
+
 	jsonExpression, isJsonPath := strings.CutPrefix(query, "jsonpath ")
 	if isJsonPath {
 		body := vmData.Response.JsonBody
@@ -42,6 +47,10 @@ func Eval(query string, vmData *napscript.VmHttpData) (string, error) {
 
 	header, isHeader := strings.CutPrefix(query, "header ")
 	if isHeader {
+		if vmData.Response.Headers == nil {
+			return "", nil
+		}
+
 		value := vmData.Response.Headers[header]
 
 		return strings.Join(value, ","), nil

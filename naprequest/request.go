@@ -41,6 +41,7 @@ type Request struct {
 	TimeoutSeconds        int    `yaml:"timeoutSeconds"`
 	Captures              map[string]string
 	Asserts               []string
+	Verbose               bool
 }
 
 func parse(data []byte) (*Request, error) {

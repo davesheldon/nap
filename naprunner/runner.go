@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,10 +102,6 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 	result.StartTime = time.Now()
 
 	result.HttpResponse, result.Error = executeHttp(request)
-
-	if result.HttpResponse != nil && result.HttpResponse.StatusCode >= 400 {
-		result.Error = errors.New(fmt.Sprintf("HTTP %s", result.HttpResponse.Status))
-	}
 
 	result.EndTime = time.Now()
 
@@ -187,13 +184,34 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 		request.Header.Add(k, v)
 	}
 
-	resp, err := client.Do(request)
+	response, err := client.Do(request)
+
+	if r.Verbose {
+		fmt.Println("REQUEST:")
+		dump, err := httputil.DumpRequestOut(request, true)
+		if err == nil {
+
+			fmt.Println(string(dump))
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+	if r.Verbose {
+		fmt.Println("RESPONSE:")
+		dump, err := httputil.DumpResponse(response, true)
+		if err == nil {
+			fmt.Println(string(dump))
+		} else {
+			fmt.Println(err)
+		}
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return response, nil
 }
 
 func fileExists(path string) bool {
