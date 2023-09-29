@@ -35,7 +35,7 @@ $ nap run ./request-1.yml
 Run finished in 297ms. 1/1 succeeded.
 ```
 
-Easy enough. For the full spec, containing all the options, see [Specifications -> Request](/docs/specs/request)
+Easy enough. For the full spec, containing all the options, see [Specifications -> Request](/nap/reference/requests)
 
 For now, let's move on to routines.
 
