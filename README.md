@@ -1,7 +1,3 @@
-![nap logo](https://user-images.githubusercontent.com/7782805/147585754-36a405c8-5821-4482-963e-8a8eb75cd8e6.png)
-
-# Nap
-
 Nap is a _FAST_, file-based command-line interface (CLI) for executing HTTP tests, using plain old YAML. 
 
 # Documentation
