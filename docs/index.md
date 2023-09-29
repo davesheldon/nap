@@ -26,7 +26,7 @@ There are two ways to get started using Nap.
 
 You can download directly from the dist folder on Github, or use one of the quick download buttons:
 
-[Windows 64-bit .zip](https://github.com/davesheldon/nap/releases/download/v0.2.4/nap.exe){: .btn}
+[Windows 64-bit executable](https://github.com/davesheldon/nap/releases/download/v0.2.4/nap.exe){: .btn}
 
 ### Using Go
 
