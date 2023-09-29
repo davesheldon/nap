@@ -1,0 +1,5 @@
+kind: routine
+name: main routine
+steps:
+  - run: subroutine-1.yml # yep, you can call routines from routines.
+  - run: subroutine-2.yml # additional sub-routines run in PARALLEL 😱
