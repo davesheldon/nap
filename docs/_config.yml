@@ -5,7 +5,7 @@ baseUrl: /nap
 url: https://davesheldon.github.io
 repository: davesheldon/nap
 permalink: pretty
-nav_footer_custom: "&nbsp;"
+nav_footer_custom: "<a href=\"https://github.com/sponsors/davesheldon\">Sponsor this project on Github</a>"
 
 exclude:
  # from https://github.com/jekyll/jekyll/blob/master/lib/site_template/_config.yml:
