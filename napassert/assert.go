@@ -73,7 +73,23 @@ func AssertResponse(assertion *Assert, actual string) error {
 			}
 
 			if floatActual != floatExpectation {
-				return fmt.Errorf("%s of \"%f\" did not equal expected value \"%f\"", query, floatActual, floatExpectation)
+				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+			}
+		}
+	case "!=":
+		if actual == expectation {
+			floatActual, err := strconv.ParseFloat(actual, 64)
+			if err != nil {
+				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+			}
+
+			floatExpectation, err := strconv.ParseFloat(expectation, 64)
+			if err != nil {
+				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+			}
+
+			if floatActual == floatExpectation {
+				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
 			}
 		}
 	case "<":
