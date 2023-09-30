@@ -32,16 +32,20 @@ type Request struct {
 	Name                  string
 	Path                  string
 	Verb                  string
-	Body                  string
+	TimeoutSeconds        int `yaml:"timeoutSeconds"`
 	Headers               map[string]string
+	Body                  string
 	PreRequestScript      string `yaml:"preRequestScript"`
 	PostRequestScript     string `yaml:"postRequestScript"`
 	PreRequestScriptFile  string `yaml:"preRequestScriptFile"`
 	PostRequestScriptFile string `yaml:"postRequestScriptFile"`
-	TimeoutSeconds        int    `yaml:"timeoutSeconds"`
 	Captures              map[string]string
 	Asserts               []string
 	Verbose               bool
+
+	// aliases
+	Url    string
+	Method string
 }
 
 func parse(data []byte) (*Request, error) {
@@ -69,7 +73,18 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 		dataAsString = strings.ReplaceAll(dataAsString, variable, v)
 	}
 	data = []byte(dataAsString)
-	return parse(data)
+	request, err := parse(data)
+
+	// check aliases
+	if request != nil && len(request.Path) == 0 && len(request.Url) > 0 {
+		request.Path = request.Url
+	}
+
+	if request != nil && len(request.Verb) == 0 && len(request.Method) > 0 {
+		request.Verb = request.Method
+	}
+
+	return request, err
 }
 
 var expr = fmt.Sprintf("^(?P<Query>.+) (?P<Predicate>%s) \"?(?P<Value>.+)\"?$", strings.Join(napassert.GetPredicates(), "|"))

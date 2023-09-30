@@ -15,6 +15,7 @@ The routine is Nap's most basic building block.
 
 ```yaml
 kind: routine # required; defines the document as a routine
+name: my routine # optional; used to identify this routine
 steps: # array; at least one step is required. 
   - run: ./request-1.yml # required; the path to the target to run
 ```
@@ -26,6 +27,12 @@ steps: # array; at least one step is required.
 `string`. Required. Allowed values: `routine`.
 
 Defines the document type as a routine.
+
+### `name` - Name
+
+`string` Optional.
+
+A name used to identify the routine. This is used in any logs/output to refer to the routine. If a name isn't given, its file-name is used instead.
 
 ### `steps` - Steps to run
 
