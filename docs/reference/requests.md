@@ -13,7 +13,7 @@ The request describes a single HTTP request exection.
 
 ## Syntax
 
-```yaml
+```yml
 kind: request # required; defines the document as a request
 name: Cat Breeds # optional; used to identify this request
 path: https://catfact.ninja/breeds # required; the request URL
@@ -36,6 +36,15 @@ captures: # optional; variables to capture from the HTTP response
 asserts: # optional; asserts to validate from the HTTP response
   - status == 200 # optional; example HTTP OK response status assert
 ```
+
+## Order of Operations
+
+The request life-cycle is performed as follows:
+
+::: mermaid
+graph TD;
+  A["Pre-Request Script (inline)"] --> B["Pre-Request Script (file)"] --> C["HTTP Request Execution"] --> D[Captures] --> E["Post-Request Script (inline)"] --> F["Post-Request Script (file)"] --> G[Asserts]
+:::
 
 ## Properties
 
@@ -112,7 +121,7 @@ Defines an relative path to a script to run after the request.
 A set of captures to perform. Any number of variables may be captured as YAML keys.
 
 {: .highlight }
-For more information about captures, see [Reference -> Captures](/nap/reference/captures).
+For the full capture reference, see [Reference -> Captures](/nap/reference/captures).
 
 ### `asserts` - Asserts
 
@@ -121,4 +130,4 @@ For more information about captures, see [Reference -> Captures](/nap/reference/
 Defines the asserts to perform. Any number of asserts may be specified.
 
 {: .highlight }
-For more infromation about asserts, see [Reference -> Asserts](/nap/reference/asserts).
+For the full assert reference, see [Reference -> Asserts](/nap/reference/asserts).

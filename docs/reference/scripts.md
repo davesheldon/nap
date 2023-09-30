@@ -69,3 +69,25 @@ nap.fail(message)
 #### Parameters
 
 * `message` - `string`. The message to display
+
+## Built-In Data
+
+### `nap.http` - HTTP data
+
+`object`. Contains HTTP request and response data. Only set for pre- post- request scripts.
+
+#### Properties
+
+* `request` - `object`. HTTP request data. Contains the following properties:
+  * `url` - `string`. The target URL.
+  * `verb` - `string`. The request method.
+  * `body` - `string`. The request body.
+  * `headers` - `object`. The request headers. Contains properties and values that match the header names and values.
+* `response` - `object`. HTTP response data. Contains `null` for pre-request scripts. Contains the following properties:
+  * `statusCode` - `number`. The numeric HTTP status code (e.g. 200).
+  * `status` - `string`. The string status code returned from the server.
+  * `body` - `string`. The response body expressed as a string.
+  * `jsonBody` - `object`. The response body expressed as an object. `null` if response Content-Type is not a json type.
+  * `headers` - `object`. The response headers. Contains properties and values that match the header names and values.
+  * `elapsedMs` - `number`. The duration of the request in milliseconds.
+
