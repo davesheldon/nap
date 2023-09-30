@@ -9,6 +9,21 @@ parent: Reference
 # Predicates
 
 {: .fs-6 .fw-300 }
-A predicate is a condition expression that evaluates a part of a response against an expectation.
+A predicate is a condition expression that evaluates a part of a response against an expectation. The result of a predicate is either `true` or `false`.
 
-TODO
+## Syntax
+
+A predicate will always appear _between_ a query and a value (such as an assert's `expectation`). Here is a table of all supported predicates and their functions.
+
+| Predicate    | Description                                 | Example                       |
+|:-------------|:--------------------------------------------|:------------------------------|
+| `==`         | Query and value are equal.                  | `status == 200`               |
+| `!=`         | Query and value are not equal.              | `status != 200`               |
+| `<`          | Query is less than value.                   | `duration < 2000`             |
+| `<=`         | Query is less than or equal to value.       | `duration <= 2000`            |
+| `>`          | Query is greater than value.                | `header Content-Length > 0`   |
+| `>=`         | Query is greater than or equal to value.    | `jsonpath $.age >= 18`        |
+| `contains`   | Query contains value as a `string`.         | `body contains Hello, World!` |
+| `startswith` | Query begins with value as a `string`.      | `body startswith Hello`       |
+| `endswith`   | Query ends with value as a `string`.        | `body endswith World!`        |
+| `matches`    | Query matches value as a regular expression | `body endswith World!`        |

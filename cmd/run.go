@@ -90,13 +90,23 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 
 	environmentFileName := runConfig.Environment
 
-	if path.Ext(environmentFileName) != ".yml" {
+	if path.Ext(environmentFileName) != ".yml" && path.Ext(environmentFileName) != ".yaml" {
 		environmentFileName = environmentFileName + ".yml"
 	}
 
 	if !fileExists(environmentFileName) {
 		// try and find it relative to the target path
 		environmentFileName = path.Join(runConfig.TargetDir, "..", "env", environmentFileName)
+	}
+
+	if !fileExists(environmentFileName) {
+		// try and find it relative to the target path
+		environmentFileName = path.Join(runConfig.TargetDir, "env", environmentFileName)
+	}
+
+	if !fileExists(environmentFileName) {
+		// try and find it relative to the target path
+		environmentFileName = path.Join(runConfig.TargetDir, environmentFileName)
 	}
 
 	if len(runConfig.Environment) > 0 {
