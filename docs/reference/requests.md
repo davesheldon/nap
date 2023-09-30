@@ -111,7 +111,7 @@ Defines an relative path to a script to run after the request.
 
 A set of captures to perform. Any number of variables may be captured as YAML keys.
 
-{: .important }
+{: .highlight }
 For more information about captures, see [Reference -> Captures](/nap/reference/captures).
 
 ### `asserts` - Asserts
