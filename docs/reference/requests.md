@@ -41,10 +41,10 @@ asserts: # optional; asserts to validate from the HTTP response
 
 The request life-cycle is performed as follows:
 
-::: mermaid
+```mermaid
 graph TD;
   A["Pre-Request Script (inline)"] --> B["Pre-Request Script (file)"] --> C["HTTP Request Execution"] --> D[Captures] --> E["Post-Request Script (inline)"] --> F["Post-Request Script (file)"] --> G[Asserts]
-:::
+```
 
 ## Properties
 
