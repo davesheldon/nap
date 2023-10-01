@@ -19,7 +19,7 @@ kind: request
 name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
 asserts: # failed asserts go to stderr
-  - status == 200
+  - status in [200, 201]
   - duration < 1000
   - header Content-Type == application/json
   - jsonpath $.data[0].breed matches ^Abyss.+
