@@ -18,6 +18,7 @@ assert.go - this file contains types and logic for evaluating assertions
 package napassert
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -33,6 +34,7 @@ type Assert struct {
 func GetPredicates() []string {
 	return []string{
 		"==",
+		"!=",
 		">",
 		">=",
 		"<",
@@ -41,6 +43,7 @@ func GetPredicates() []string {
 		"contains",
 		"startswith",
 		"endswith",
+		"in",
 	}
 }
 
@@ -55,115 +58,133 @@ func NewAssert(query string, predicate string, expectation string) *Assert {
 }
 
 func AssertResponse(assertion *Assert, actual string) error {
-	query := assertion.Query
 	predicate := assertion.Predicate
 	expectation := assertion.Expectation
 
-	switch predicate {
+	// if the first character is a !, this will reverse the predicate evaluation
+	basePredicate, isNot := strings.CutPrefix(predicate, "not ")
+
+	// If there IS a ! then we want a false result to the predicate
+	desiredResult := !isNot
+
+	// init result as a failure
+	result := !desiredResult
+
+	switch basePredicate {
 	case "==":
-		if actual != expectation {
+		result = actual == expectation
+		if result != desiredResult {
 			floatActual, err := strconv.ParseFloat(actual, 64)
 			if err != nil {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+				break
 			}
 
 			floatExpectation, err := strconv.ParseFloat(expectation, 64)
 			if err != nil {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+				break
 			}
 
-			if floatActual != floatExpectation {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
-			}
+			result = floatActual == floatExpectation
 		}
 	case "!=":
-		if actual == expectation {
+		result = actual != expectation
+		if result != desiredResult {
 			floatActual, err := strconv.ParseFloat(actual, 64)
 			if err != nil {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+				break
 			}
 
 			floatExpectation, err := strconv.ParseFloat(expectation, 64)
 			if err != nil {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
+				break
 			}
 
-			if floatActual == floatExpectation {
-				return fmt.Errorf("%s of \"%s\" did not equal expected value \"%s\"", query, actual, expectation)
-			}
+			result = floatActual != floatExpectation
 		}
 	case "<":
 		floatActual, err := strconv.ParseFloat(actual, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 		floatAssertValue, err := strconv.ParseFloat(expectation, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 
-		if floatActual >= floatAssertValue {
-			return fmt.Errorf("%s of \"%s\" is not less than expected value \"%s\"", query, actual, expectation)
-		}
+		result = floatActual < floatAssertValue
 	case "<=":
 		floatActual, err := strconv.ParseFloat(actual, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 		floatAssertValue, err := strconv.ParseFloat(expectation, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 
-		if floatActual > floatAssertValue {
-			return fmt.Errorf("%s of \"%s\" is not less than expected value \"%s\"", query, actual, expectation)
-		}
+		result = floatActual <= floatAssertValue
 	case ">":
 		floatActual, err := strconv.ParseFloat(actual, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 		floatAssertValue, err := strconv.ParseFloat(expectation, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 
-		if floatActual <= floatAssertValue {
-			return fmt.Errorf("%s of \"%s\" is not less than expected value \"%s\"", query, actual, expectation)
-		}
+		result = floatActual > floatAssertValue
 	case ">=":
-
 		floatActual, err := strconv.ParseFloat(actual, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 		floatAssertValue, err := strconv.ParseFloat(expectation, 64)
 		if err != nil {
-			return fmt.Errorf("%s of \"%s\" is not a number and cannot be compared using a less-than predicate", query, actual)
+			break
 		}
 
-		if floatActual < floatAssertValue {
-			return fmt.Errorf("%s of \"%s\" is not less than expected value \"%s\"", query, actual, expectation)
-		}
+		result = floatActual >= floatAssertValue
 	case "matches":
 		re := regexp.MustCompile(expectation)
-		if !re.MatchString(actual) {
-			return fmt.Errorf("%s of \"%s\" does not match expression /%s/", query, actual, expectation)
-		}
+		result = re.MatchString(actual)
 	case "contains":
-		if !strings.Contains(actual, expectation) {
-			return fmt.Errorf("%s of \"%s\" does not contain string \"%s\"", query, actual, expectation)
-		}
+		result = strings.Contains(actual, expectation)
 	case "startswith":
-		if !strings.HasPrefix(actual, expectation) {
-			return fmt.Errorf("%s of \"%s\" does not start with \"%s\"", query, actual, expectation)
-		}
+		result = strings.HasPrefix(actual, expectation)
 	case "endswith":
-		if !strings.HasSuffix(actual, expectation) {
-			return fmt.Errorf("%s of \"%s\" does not end with \"%s\"", query, actual, expectation)
+		result = strings.HasSuffix(actual, expectation)
+	case "in":
+		validValues := []interface{}{}
+		data := []byte(expectation)
+		err := json.Unmarshal(data, &validValues)
+		if err != nil {
+			break
+		}
+
+		for _, val := range validValues {
+			strVal := fmt.Sprint(val)
+			result = strVal == actual
+
+			if result != desiredResult {
+
+				// string didn't compare, let's parse to float and try again
+				floatVal, err := strconv.ParseFloat(strVal, 64)
+				floatActual, err2 := strconv.ParseFloat(actual, 64)
+
+				result = err == nil && err2 == nil && floatVal == floatActual
+			}
+
+			if result == desiredResult {
+				break
+			}
 		}
 	default:
 		return fmt.Errorf("Unrecognized predicate \"%s\"", predicate)
+	}
+
+	if result != desiredResult {
+		return fmt.Errorf("Assert failed \"%s %s %s\"", actual, predicate, expectation)
 	}
 
 	return nil

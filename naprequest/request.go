@@ -87,22 +87,30 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 	return request, err
 }
 
-var expr = fmt.Sprintf("^(?P<Query>.+) (?P<Predicate>%s) \"?(?P<Value>.+)\"?$", strings.Join(napassert.GetPredicates(), "|"))
+var expr = fmt.Sprintf("^(.+) (%s) \"?(.+)\"?$", strings.Join(napassert.GetPredicates(), "|"))
 var re = regexp.MustCompile(expr)
 
-func (request *Request) GetAsserts() []*napassert.Assert {
+func (request *Request) GetAsserts() ([]*napassert.Assert, error) {
 	var asserts []*napassert.Assert = make([]*napassert.Assert, 0)
 	for _, v := range request.Asserts {
 		matches := re.FindStringSubmatch(v)
+		if len(matches) < 4 {
+			return nil, fmt.Errorf("Could not parse assert: %s", v)
+		}
 
 		query := matches[1]
 		predicate := matches[2]
 		expectation := matches[3]
 
-		assert := napassert.NewAssert(query, predicate, expectation)
+		newQuery, queryHadNot := strings.CutSuffix(query, " not")
+		if queryHadNot {
+			query = newQuery
+			predicate = "not " + predicate
+		}
 
+		assert := napassert.NewAssert(query, predicate, expectation)
 		asserts = append(asserts, assert)
 	}
 
-	return asserts
+	return asserts, nil
 }

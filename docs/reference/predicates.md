@@ -27,3 +27,12 @@ A predicate will always appear _between_ a query and a value (such as an assert'
 | `startswith` | Query begins with value as a `string`.      | `body startswith Hello`       |
 | `endswith`   | Query ends with value as a `string`.        | `body endswith World!`        |
 | `matches`    | Query matches value as a regular expression | `body endswith World!`        |
+| `in`         | Query matches one of a set of values        | `status in [ 200, 201 ]`      |
+
+## Negation
+
+Any predicate can be negated to achieve the opposite effect by using the `not` keyword. For example:
+
+```yml
+status not in [ 400, 500 ] # will succeed as long as the status is NOT 400 or 500
+```

@@ -137,7 +137,11 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 		}
 	}
 
-	asserts := request.GetAsserts()
+	asserts, err := request.GetAsserts()
+	if err != nil {
+		result.Error = err
+		return result
+	}
 
 	for _, v := range asserts {
 
