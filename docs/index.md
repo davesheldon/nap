@@ -7,7 +7,7 @@ nav_order: 1
 # Achieve _FAST_ HTTP test automation without all the fuss.
 
 {: .fs-6 .fw-300 }
-Nap super-charges your test automation workflow with parallel execution, powerful asserts and the simplicity of file-based storage.
+Nap super-charges your test automation workflow with parallel execution, powerful asserts and the flexibility of file-based storage.
 
 {: .fs-6 }
 [Get Started](#getting-started){: .btn .btn-primary } [View on Github](https://github.com/davesheldon/nap){: .btn }
