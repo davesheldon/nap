@@ -86,9 +86,30 @@ A set of HTTP request headers to include. Any number of headers may be included 
 
 ### `body` - HTTP request body
 
-`string`. Optional.
+`string | object`. Optional.
 
-Sets the HTTP request body to the given string.
+Sets the HTTP request body to the given value. For most values of `headers["Content-Type"]`, simply set the body to the string representation. For example, when using `application/json`, the body should look like this:
+
+```yml
+body: |
+  {
+    "someField": "someValue"
+  }
+```
+
+To use a file for the body content, set the body to the relative path and prefix it with the `@` character, e.g.:
+
+```yml
+body: "@payload.json"
+```
+
+If `headers["Content-Type"]` is `multipart/form-data`, then form data should be defined as key/value pairs, e.g.:
+
+```yml
+body:
+  someField: someValue # fields are added inline
+  someFile:  "@file.txt" # attachments may be added by their relative path and are prefixed with @ 
+```
 
 ### `preRequestScript` - Pre-request script
 

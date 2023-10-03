@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/kennygrant/sanitize"
 
@@ -51,7 +52,7 @@ var newCmd = &cobra.Command{
 		subdirectoriesToCreate := []string{".templates", "env", "requests", "routines", "scripts"}
 
 		for _, subdirectory := range subdirectoriesToCreate {
-			fullPath := path.Join(projectPath, subdirectory)
+			fullPath := filepath.Join(projectPath, subdirectory)
 
 			if err := ensureDirectoryExists(fullPath); err != nil {
 				return err

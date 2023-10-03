@@ -22,7 +22,7 @@ An environment file is a `.yml` file arranged into key/value pairs.
 
 During Nap's initialization, each key will be saved to a variable with its corresponding value.
 
-## Usage
+## Command Line Usage
 
 Use the `-e` or `--env` flag to include an environment file.
 
@@ -40,3 +40,6 @@ Environments can be referenced by path or by just the file name. If a full path 
 * `./env/my-env.yml` - in an `env` folder, relative to the current working directory
 * `./routines/my-env.yml` - in the target's directory
 * `./routines/env/my-env.yml` - in an `env` folder within the target's directory
+
+{: .highlight }
+For the full variable reference, see [Reference -> Variables](/nap/reference/variables).

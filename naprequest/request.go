@@ -34,7 +34,7 @@ type Request struct {
 	Verb                  string
 	TimeoutSeconds        int `yaml:"timeoutSeconds"`
 	Headers               map[string]string
-	Body                  string
+	Body                  interface{}
 	PreRequestScript      string `yaml:"preRequestScript"`
 	PostRequestScript     string `yaml:"postRequestScript"`
 	PreRequestScriptFile  string `yaml:"preRequestScriptFile"`

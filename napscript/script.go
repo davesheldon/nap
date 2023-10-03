@@ -19,10 +19,11 @@ script.go - this file contains data structures and logic for setting up and exec
 package napscript
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/naprequest"
@@ -30,8 +31,9 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) *naproutine.RoutineResult) error {
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
+func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) *naproutine.RoutineResult) error {
 	err := ctx.ScriptVm.Set("napRun", func(call otto.FunctionCall) otto.Value {
 
 		path := call.Argument(0).String()
@@ -150,7 +152,7 @@ type VmHttpData struct {
 type VmHttpRequest struct {
 	Url     string            `json:"url"`
 	Verb    string            `json:"verb"`
-	Body    string            `json:"body"`
+	Body    interface{}       `json:"body"`
 	Headers map[string]string `json:"headers"`
 }
 

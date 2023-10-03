@@ -13,7 +13,7 @@ The routine is Nap's most basic building block.
 
 ## Syntax
 
-```yaml
+```yml
 kind: routine # required; defines the document as a routine
 name: my routine # optional; used to identify this routine
 steps: # array; at least one step is required. 

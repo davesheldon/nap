@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/davesheldon/nap/napcontext"
@@ -47,7 +48,7 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		napCtx := napcontext.New(runConfig.TargetDir, runConfig.Environment, environmentVariables)
+		napCtx := napcontext.New(".", runConfig.Environment, environmentVariables)
 
 		routineResult := naprunner.RunPath(napCtx, runConfig.TargetName)
 
@@ -96,17 +97,17 @@ func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 
 	if !fileExists(environmentFileName) {
 		// try and find it relative to the target path
-		environmentFileName = path.Join(runConfig.TargetDir, "..", "env", environmentFileName)
+		environmentFileName = filepath.Join(runConfig.TargetDir, "..", "env", environmentFileName)
 	}
 
 	if !fileExists(environmentFileName) {
 		// try and find it relative to the target path
-		environmentFileName = path.Join(runConfig.TargetDir, "env", environmentFileName)
+		environmentFileName = filepath.Join(runConfig.TargetDir, "env", environmentFileName)
 	}
 
 	if !fileExists(environmentFileName) {
 		// try and find it relative to the target path
-		environmentFileName = path.Join(runConfig.TargetDir, environmentFileName)
+		environmentFileName = filepath.Join(runConfig.TargetDir, environmentFileName)
 	}
 
 	if len(runConfig.Environment) > 0 {
@@ -141,7 +142,7 @@ type RunConfig struct {
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config := new(RunConfig)
 	config.Target = args[0]
-	config.TargetDir = path.Dir(config.Target)
+	config.TargetDir = filepath.Dir(config.Target)
 	config.TargetName = path.Base(config.Target)
 	config.Environment, _ = cmd.Flags().GetString("env")
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")

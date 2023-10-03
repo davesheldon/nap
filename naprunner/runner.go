@@ -22,9 +22,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -77,7 +79,7 @@ func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptR
 	return result
 }
 
-func runRequest(ctx *napcontext.Context, request *naprequest.Request) *naprequest.RequestResult {
+func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Request) *naprequest.RequestResult {
 	result := new(naprequest.RequestResult)
 	result.Request = request
 
@@ -101,13 +103,19 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 
 	result.StartTime = time.Now()
 
-	result.HttpResponse, result.Error = executeHttp(request)
+	response, err := executeHttp(request, filepath.Dir(runPath))
+
+	result.HttpResponse = response
+	if err != nil {
+		result.Error = fmt.Errorf("Request failed to execute: %w", err)
+		return result
+	}
 
 	result.EndTime = time.Now()
 
 	vmData, err := napscript.SetVmHttpData(ctx, result)
 	if err != nil {
-		result.Error = fmt.Errorf("error setting js http result: %w", err)
+		result.Error = fmt.Errorf("Error setting js http result: %w", err)
 		return result
 	}
 
@@ -163,7 +171,7 @@ func runRequest(ctx *napcontext.Context, request *naprequest.Request) *napreques
 	return result
 }
 
-func executeHttp(r *naprequest.Request) (*http.Response, error) {
+func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response, error) {
 	client := &http.Client{}
 
 	if r.TimeoutSeconds > 0 {
@@ -171,9 +179,48 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 	}
 
 	var content io.Reader
+	bodyAsString := fmt.Sprint(r.Body)
+	if r.Body != nil && len(bodyAsString) > 0 {
 
-	if len(r.Body) > 0 {
-		content = bytes.NewBuffer([]byte(r.Body))
+		if strings.HasPrefix(r.Headers["Content-Type"], "multipart/form-data") {
+			bodyAsMap, ok := r.Body.(map[interface{}]interface{})
+
+			if !ok {
+				return nil, fmt.Errorf("Could not read form body.")
+			}
+
+			bodyAsStringMap := make(map[string]string)
+
+			for k, v := range bodyAsMap {
+				stringKey := fmt.Sprint(k)
+				bodyAsStringMap[stringKey] = fmt.Sprint(v)
+			}
+
+			newHeader, formData, err := createFormData(bodyAsStringMap, workingDirectory)
+			if err != nil {
+				return nil, err
+			}
+
+			r.Headers["Content-Type"] = newHeader
+			content = formData
+		} else if strings.HasPrefix(bodyAsString, "@") {
+			bodyAsString = bodyAsString[1:]
+			fmt.Println(workingDirectory)
+			pathToPayload := filepath.Join(workingDirectory, bodyAsString)
+			file, err := os.ReadFile(pathToPayload)
+			if err != nil {
+				return nil, err
+			}
+			content = bytes.NewBuffer(file)
+		} else {
+			bodyAsString, ok := r.Body.(string)
+			if ok {
+				content = bytes.NewBuffer([]byte(bodyAsString))
+			} else {
+				// todo: would be nice to detect the content type and marshal to the right format here to convert e.g. YAML to JSON
+				return nil, fmt.Errorf("Could not read body as string")
+			}
+		}
 	} else {
 		content = strings.NewReader("")
 	}
@@ -188,8 +235,6 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 		request.Header.Add(k, v)
 	}
 
-	response, err := client.Do(request)
-
 	if r.Verbose {
 		fmt.Println("REQUEST:")
 		dump, err := httputil.DumpRequestOut(request, true)
@@ -200,6 +245,8 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 			fmt.Println(err)
 		}
 	}
+
+	response, err := client.Do(request)
 
 	if r.Verbose {
 		fmt.Println("RESPONSE:")
@@ -216,6 +263,30 @@ func executeHttp(r *naprequest.Request) (*http.Response, error) {
 	}
 
 	return response, nil
+}
+
+func createFormData(form map[string]string, workingDirectory string) (string, io.Reader, error) {
+	body := new(bytes.Buffer)
+	mp := multipart.NewWriter(body)
+	defer mp.Close()
+	for key, val := range form {
+		if strings.HasPrefix(val, "@") {
+			val = val[1:]
+			file, err := os.Open(path.Join(workingDirectory, val))
+			if err != nil {
+				return "", nil, err
+			}
+			defer file.Close()
+			part, err := mp.CreateFormFile(key, val)
+			if err != nil {
+				return "", nil, err
+			}
+			io.Copy(part, file)
+		} else {
+			mp.WriteField(key, val)
+		}
+	}
+	return mp.FormDataContentType(), body, nil
 }
 
 func fileExists(path string) bool {
@@ -270,7 +341,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 				result.StepResults = append(result.StepResults, stepResult)
 				break
 			} else {
-				stepResult = naproutine.StepRequestResult(step, runRequest(ctx, request))
+				stepResult = naproutine.StepRequestResult(step, runRequest(ctx, stepPath, request))
 			}
 		}
 
@@ -364,11 +435,16 @@ func peekType(path string, ctx *napcontext.Context) (string, error) {
 	err = yaml.Unmarshal(data, &yamlMap)
 
 	if err != nil {
-		return "", fmt.Errorf("type of file unclear: %s (cannot unmarshal: %s)", path, err.Error())
+		return "", fmt.Errorf("invalid YAML file: %s (cannot unmarshal: %s)", path, err.Error())
 	}
 
 	if val, ok := yamlMap["kind"]; ok {
-		return val.(string), nil
+		sKind, ok := val.(string)
+		if ok {
+			return sKind, nil
+		} else {
+			return "", fmt.Errorf("type of file unclear: %s", path)
+		}
 	} else {
 		return "", fmt.Errorf("type of file unclear: %s", path)
 	}
