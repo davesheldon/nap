@@ -1,8 +1,0 @@
-kind: request
-name: module-3-feature-1-request-2
-path: https://www.integrity-data.com/contact/
-verb: GET
-timeoutSeconds: 1
-headers:
-  Accept: application/json
-  Content-Type: application/json

@@ -1,4 +1,3 @@
-# request-1.yml
 kind: request
 name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds

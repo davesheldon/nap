@@ -1,8 +1,0 @@
-kind: request
-name: request-3
-path: https://www.google.com
-verb: GET
-timeoutSeconds: 1
-headers:
-  Accept: application/json
-  Content-Type: application/json

@@ -15,6 +15,7 @@ Nap has a few basic building-blocks that you can leverage to quickly write your 
 Here's an example of a request in Nap:
 
 ```yml
+# request-1.yml
 kind: request
 name: Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
@@ -28,7 +29,7 @@ captures: # captures can be used in later requests using the ${variable} syntax
   secondBreed: jsonpath $.data[1].breed
 ```
 
-Let's save this to a file and run it. Let's call it `request-1.yml`. To run this request, we'll go to the command-line:
+To run this request, we'll go to the command-line:
 
 ```bash
 $ nap run ./request-1.yml
@@ -43,22 +44,24 @@ For the full request reference, containing all the options, see [Reference -> Re
 What makes Nap _FAST_? Routines make Nap _FAST_. Here's what a routine looks like in Nap:
 
 ```yml
+# routine-1.yml
 kind: routine
 name: main routine
 steps:
   - run: request-1.yml
 ```
 
-We can save and run a routine the same way we would run a request. Let's call this one `routine-1.yml` and run it:
+We can run a routine the same way we would run a request:
 
 ```bash
 $ nap run ./routine-1.yml
 Run finished in 312ms. 1/1 succeeded.
 ```
 
-Oops. That was actually slower. Let's change this up a bit. Let's start by adding a second request, called `request-2.yml`:
+Oops. That was actually slower. Let's change this up a bit. Let's start by adding a second request:
 
 ```yml
+# request-2.yml
 kind: request
 name: Cat Facts - Succeeds
 path: https://catfact.ninja/facts
@@ -67,9 +70,10 @@ asserts:
   - duration < 1000
 ```
 
-Simple enough. Now let's add a couple more routines. These will be redundant, but we're just illustrating a point here. We'll call them `subroutine-1.yml` and `subroutine-2.yml`, respectively:
+Simple enough. Now let's add a couple more routines. These will be redundant, but we're just illustrating a point here:
 
 ```yml
+# subroutine-1.yml
 kind: routine
 name: example subroutine 1
 steps:
@@ -78,6 +82,7 @@ steps:
 ```
 
 ```yml
+# subroutine-2.yml
 kind: routine
 name: example subroutine 2
 steps:
@@ -88,6 +93,7 @@ steps:
 Finally, we'll update `routine-1.yml` to the following:
 
 ```yml
+# routine-1.yml
 kind: routine
 name: main routine
 steps:

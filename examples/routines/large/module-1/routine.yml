@@ -1,6 +1,0 @@
-kind: routine
-name: mod-1
-steps:
-  - run: feature-1/routine.yml
-  - run: feature-2/routine.yml
-  - run: feature-3/routine.yml

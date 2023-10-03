@@ -1,6 +1,0 @@
-kind: routine
-name: mod-2-feat-3
-steps:
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-3.yml
