@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Nap Run
+title: Run
 nav_order: 1
 parent: Commands
 ---
