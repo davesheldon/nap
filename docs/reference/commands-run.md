@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Run
-nav_order: 1
 parent: Commands
+permalink: /reference/commands/run
 ---
 
 {: .fs-10 .fw-300 }

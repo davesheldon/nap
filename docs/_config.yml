@@ -1,8 +1,8 @@
 remote_theme: just-the-docs/just-the-docs@v0.6.2
 title: Nap
-description: A fast, file-based HTTP test automation framework
-baseUrl: /nap
-url: https://davesheldon.github.io
+description: Fast, flexible HTTP test automation
+baseUrl: /
+url: https://naprun.dev
 repository: davesheldon/nap
 permalink: pretty
 

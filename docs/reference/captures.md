@@ -38,4 +38,4 @@ The variable tells Nap where to store this capture. This variable will overwrite
 The query tells Nap what part of the response we want to capture. This query will retrieve the `myVal` property from the root object in the repsonse body, assuming it is in JSON format.
 
 {: .highlight }
-For the full query reference, see [Reference -> Queries](/nap/reference/queries).
+For the full query reference, see [Reference -> Queries](/reference/queries).

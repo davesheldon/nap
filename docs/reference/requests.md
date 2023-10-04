@@ -142,7 +142,7 @@ Defines an relative path to a script to run after the request.
 A set of captures to perform. Any number of variables may be captured as YAML keys.
 
 {: .highlight }
-For the full capture reference, see [Reference -> Captures](/nap/reference/captures).
+For the full capture reference, see [Reference -> Captures](/reference/captures).
 
 ### `asserts` - Asserts
 
@@ -151,4 +151,4 @@ For the full capture reference, see [Reference -> Captures](/nap/reference/captu
 Defines the asserts to perform. Any number of asserts may be specified.
 
 {: .highlight }
-For the full assert reference, see [Reference -> Asserts](/nap/reference/asserts).
+For the full assert reference, see [Reference -> Asserts](/reference/asserts).

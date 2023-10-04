@@ -28,14 +28,14 @@ Let's break this down into the three parts.
 The query tells Nap what part of the response we want to validate. In this case we're checking the HTTP response status.
 
 {: .highlight }
-For the full query reference, see [Reference -> Queries](/nap/reference/queries).
+For the full query reference, see [Reference -> Queries](/reference/queries).
 
 ### Predicate: `==`
 
 The predicate tells Nap what sort of validation we want this assert to perform. The `==` means we're testing for equality.
 
 {: .highlight }
-For the full predicate reference, see [Reference -> Predicates](/nap/reference/predicates).
+For the full predicate reference, see [Reference -> Predicates](/reference/predicates).
 
 ### Expectation: `200`
 

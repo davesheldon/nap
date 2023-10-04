@@ -37,7 +37,7 @@ Run finished in 297ms. 1/1 succeeded.
 ```
 
 {: .highlight }
-For the full request reference, containing all the options, see [Reference -> Request](/nap/reference/requests)
+For the full request reference, containing all the options, see [Reference -> Request](/reference/requests)
 
 ## Routines
 

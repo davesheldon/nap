@@ -23,8 +23,8 @@ An environment file is a `.yml` file arranged into key/value pairs.
 During Nap's initialization, each key will be saved to a variable with its corresponding value.
 
 {: .highlight }
-For the `--env` command line reference, see [Reference -> Commands -> Run](/nap/reference/commands/run#--env---Environment).
+For the `--env` command line reference, see [Reference -> Commands -> Run](/reference/commands/run#--env---Environment).
 
 
 {: .highlight }
-For the full variable reference, see [Reference -> Variables](/nap/reference/variables).
+For the full variable reference, see [Reference -> Variables](/reference/variables).

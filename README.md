@@ -4,7 +4,7 @@ Nap is a command-line interface (CLI) for running HTTP requests using YAML files
 
 Check out the docs for info about installation, getting started and other topics:
 
-https://davesheldon.github.io/nap/
+https://naprun.dev
 
 ## Community
 
