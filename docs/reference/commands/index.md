@@ -4,6 +4,7 @@ title: Commands
 nav_order: 1
 parent: Reference
 has_children: true
+permalink: /reference/commands
 ---
 
 {: .fs-10 .fw-300 }
