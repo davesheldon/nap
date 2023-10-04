@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,10 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "nap",
-	Short: "Nap is a CLI for testing REST APIs",
-	Long: `Nap is a CLI client for testing REST APIs.
-This client helps create and run HTTP requests, manage automated
-tests and environments, and execute scripted steps during CI/CD.`,
+	Short: "Nap manages and runs HTTP tests.",
+	Long: `Nap manages and runs HTTP tests.
+	
+  Find more information at: https://naprun.dev`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

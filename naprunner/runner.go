@@ -205,7 +205,6 @@ func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response
 			content = formData
 		} else if strings.HasPrefix(bodyAsString, "@") {
 			bodyAsString = bodyAsString[1:]
-			fmt.Println(workingDirectory)
 			pathToPayload := filepath.Join(workingDirectory, bodyAsString)
 			file, err := os.ReadFile(pathToPayload)
 			if err != nil {

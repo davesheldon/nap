@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/davesheldon/nap/napcontext"
@@ -48,9 +49,9 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		napCtx := napcontext.New(".", runConfig.Environment, environmentVariables)
+		napCtx := napcontext.New(".", runConfig.Environments, environmentVariables)
 
-		routineResult := naprunner.RunPath(napCtx, runConfig.TargetName)
+		routineResult := naprunner.RunPath(napCtx, runConfig.Target)
 
 		end := time.Now()
 
@@ -89,54 +90,67 @@ func fileExists(path string) bool {
 func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 	environmentVariables := make(map[string]string)
 
-	environmentFileName := runConfig.Environment
-
-	if path.Ext(environmentFileName) != ".yml" && path.Ext(environmentFileName) != ".yaml" {
-		environmentFileName = environmentFileName + ".yml"
-	}
-
-	if !fileExists(environmentFileName) {
-		// try and find it relative to the target path
-		environmentFileName = filepath.Join(runConfig.TargetDir, "..", "env", environmentFileName)
-	}
-
-	if !fileExists(environmentFileName) {
-		// try and find it relative to the target path
-		environmentFileName = filepath.Join(runConfig.TargetDir, "env", environmentFileName)
-	}
-
-	if !fileExists(environmentFileName) {
-		// try and find it relative to the target path
-		environmentFileName = filepath.Join(runConfig.TargetDir, environmentFileName)
-	}
-
-	if len(runConfig.Environment) > 0 {
-		if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
-			return environmentVariables, fmt.Errorf("environment '%s' not found", runConfig.Environment)
-		} else if err != nil {
-			return environmentVariables, err
+	for _, environmentFileNameOriginal := range runConfig.Environments {
+		if path.Ext(environmentFileNameOriginal) != ".yml" && path.Ext(environmentFileNameOriginal) != ".yaml" {
+			environmentFileNameOriginal = environmentFileNameOriginal + ".yml"
 		}
 
-		configData, err := os.ReadFile(environmentFileName)
-		if err != nil {
-			return environmentVariables, err
+		environmentFileName := environmentFileNameOriginal
+
+		if !fileExists(environmentFileName) {
+			// try and find it relative to the target path
+			environmentFileName = filepath.Join(runConfig.TargetDir, "..", "env", environmentFileNameOriginal)
 		}
 
-		err = yaml.Unmarshal(configData, &environmentVariables)
-		if err != nil {
-			return environmentVariables, err
+		if !fileExists(environmentFileName) {
+			// try and find it relative to the target path
+			environmentFileName = filepath.Join(runConfig.TargetDir, "env", environmentFileNameOriginal)
 		}
+
+		if !fileExists(environmentFileName) {
+			// try and find it relative to the target path
+			environmentFileName = filepath.Join(runConfig.TargetDir, environmentFileNameOriginal)
+		}
+
+		if len(environmentFileNameOriginal) > 0 {
+			if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
+				return environmentVariables, fmt.Errorf("environment '%s' not found", environmentFileNameOriginal)
+			} else if err != nil {
+				return environmentVariables, err
+			}
+
+			configData, err := os.ReadFile(environmentFileName)
+			if err != nil {
+				return environmentVariables, err
+			}
+
+			subMap := make(map[string]string)
+
+			err = yaml.Unmarshal(configData, &subMap)
+			if err != nil {
+				return environmentVariables, err
+			}
+
+			for k, v := range subMap {
+				environmentVariables[k] = v
+			}
+		}
+	}
+
+	for k, v := range runConfig.Variables {
+		environmentVariables[k] = v
 	}
 
 	return environmentVariables, nil
 }
 
 type RunConfig struct {
-	Target      string
-	TargetDir   string
-	TargetName  string
-	Environment string
-	Verbose     bool
+	Target       string
+	TargetDir    string
+	TargetName   string
+	Environments []string
+	Variables    map[string]string
+	Verbose      bool
 }
 
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
@@ -144,8 +158,18 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config.Target = args[0]
 	config.TargetDir = filepath.Dir(config.Target)
 	config.TargetName = path.Base(config.Target)
-	config.Environment, _ = cmd.Flags().GetString("env")
+	config.Environments, _ = cmd.Flags().GetStringArray("env")
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
+	config.Variables = make(map[string]string)
+
+	params, _ := cmd.Flags().GetStringArray("param")
+
+	for _, p := range params {
+		keyVal := strings.Split(p, "=")
+		if len(keyVal) == 2 {
+			config.Variables[keyVal[0]] = keyVal[1]
+		}
+	}
 
 	return config
 }
@@ -153,5 +177,6 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().StringP("env", "e", "", "name of the environment variable set to use")
+	runCmd.Flags().StringArrayP("env", "e", []string{}, "add environment variables from a file `path`")
+	runCmd.Flags().StringArrayP("param", "p", []string{}, "add a single variable to the run as a `<name>=<value>` pair")
 }

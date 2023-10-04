@@ -23,7 +23,7 @@ import (
 
 type Context struct {
 	ScriptVm             *otto.Otto
-	EnvironmentName      string
+	Environments         []string
 	EnvironmentVariables map[string]string
 	ScriptFailure        bool
 	ScriptFailureMessage string
@@ -31,7 +31,7 @@ type Context struct {
 	WorkingDirectory     string
 }
 
-func New(workingDirectory string, environmentName string, environmentVariables map[string]string) *Context {
+func New(workingDirectory string, environments []string, environmentVariables map[string]string) *Context {
 	ctx := new(Context)
 
 	ctx.EnvironmentVariables = make(map[string]string)
@@ -48,5 +48,5 @@ func New(workingDirectory string, environmentName string, environmentVariables m
 }
 
 func (ctx *Context) Clone(workingDirectory string) *Context {
-	return New(workingDirectory, ctx.EnvironmentName, ctx.EnvironmentVariables)
+	return New(workingDirectory, ctx.Environments, ctx.EnvironmentVariables)
 }

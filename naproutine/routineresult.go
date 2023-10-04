@@ -64,7 +64,7 @@ func (result *RoutineResult) Print(prefix string, context *napcontext.Context) {
 		fmt.Println("------------------------------------------------------")
 		fmt.Printf("Routine: %s\n", result.Routine.Name)
 		fmt.Printf("Directory: %s\n", context.WorkingDirectory)
-		fmt.Printf("Environment: %s\n", context.EnvironmentName)
+		fmt.Printf("Environments: %s\n", context.Environments)
 		fmt.Println("------------------------------------------------------")
 	}
 

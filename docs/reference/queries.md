@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Queries
-nav_order: 5
+nav_order: 6
 parent: Reference
 ---
 

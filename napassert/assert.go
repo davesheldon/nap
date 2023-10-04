@@ -57,9 +57,10 @@ func NewAssert(query string, predicate string, expectation string) *Assert {
 	return assert
 }
 
-func AssertResponse(assertion *Assert, actual string) error {
-	predicate := assertion.Predicate
-	expectation := assertion.Expectation
+func AssertResponse(assert *Assert, actual string) error {
+	query := assert.Query
+	predicate := assert.Predicate
+	expectation := assert.Expectation
 
 	// if the first character is a !, this will reverse the predicate evaluation
 	basePredicate, isNot := strings.CutPrefix(predicate, "not ")
@@ -184,7 +185,7 @@ func AssertResponse(assertion *Assert, actual string) error {
 	}
 
 	if result != desiredResult {
-		return fmt.Errorf("Assert failed \"%s %s %s\"", actual, predicate, expectation)
+		return fmt.Errorf("Assert failed \"%s => %s %s %s\"", query, actual, predicate, expectation)
 	}
 
 	return nil

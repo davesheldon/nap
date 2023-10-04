@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Variables
-nav_order: 8
+nav_order: 9
 parent: Reference
 ---
 
@@ -25,9 +25,23 @@ asserts:
 
 Variables are injected into requests and routines whenever they're loaded. Variables are reference by name, in the format `${variable}`.
 
+## In Environments
+
+Variables may be added en masse via environment files.
+
+{: .highlight }
+For the full environment reference, see [Reference -> Environments](/nap/reference/environments).
+
+## Inline
+
+Individual variables may be added via the `run` command's `--param` flag.
+
+{: .highlight }
+For the `--param` command line reference, see [Reference -> Commands -> Run](/nap/reference/commands/run#--param---Parameter).
+
 ## In Scripts
 
-Variables may also be referenced in scripts via `nap.env.get(variable)`.
+Variables may be read and mutated from scripts via `nap.env.get(key)` and `nap.env.set(key, value)`.
 
 {: .highlight }
 For the full script reference, see [Reference -> Scripts](/nap/reference/scripts).

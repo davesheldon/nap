@@ -17,125 +17,125 @@ cmd/generate.go - this is the handler for the generate command
 */
 package cmd
 
-import (
-	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
+// import (
+// 	"errors"
+// 	"fmt"
+// 	"os"
+// 	"path/filepath"
+// 	"strings"
 
-	"github.com/kennygrant/sanitize"
-	"github.com/spf13/cobra"
-)
+// 	"github.com/kennygrant/sanitize"
+// 	"github.com/spf13/cobra"
+// )
 
-var supportedComponentTypes = []string{"request", "routine", "env", "script"}
+// var supportedComponentTypes = []string{"request", "routine", "env", "script"}
 
-func containsString(slice []string, value string) bool {
-	for _, s := range slice {
-		if s == value {
-			return true
-		}
-	}
+// func containsString(slice []string, value string) bool {
+// 	for _, s := range slice {
+// 		if s == value {
+// 			return true
+// 		}
+// 	}
 
-	return false
-}
+// 	return false
+// }
 
-// generateCmd represents the generate command
-var generateCmd = &cobra.Command{
-	Use:   "generate <type> <target>",
-	Short: "Generate a new request, routine, script or environment",
-	Long:  `The generate command will add a file to the appropriate location using the template for that object type.`,
-	Args:  cobra.MinimumNArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if !containsString(supportedComponentTypes, args[0]) {
-			return fmt.Errorf("generate requires a valid type argument. valid options: %s", strings.Join(supportedComponentTypes, ", "))
-		}
+// // generateCmd represents the generate command
+// var generateCmd = &cobra.Command{
+// 	Use:   "generate <type> <target>",
+// 	Short: "Generate a new request, routine, script or environment",
+// 	Long:  `The generate command will add a file to the appropriate location using the template for that object type.`,
+// 	Args:  cobra.MinimumNArgs(2),
+// 	RunE: func(cmd *cobra.Command, args []string) error {
+// 		if !containsString(supportedComponentTypes, args[0]) {
+// 			return fmt.Errorf("generate requires a valid type argument. valid options: %s", strings.Join(supportedComponentTypes, ", "))
+// 		}
 
-		var componentType = args[0]
-		var componentName = args[1]
+// 		var componentType = args[0]
+// 		var componentName = args[1]
 
-		filePath := getFilePath(componentType, componentName)
+// 		filePath := getFilePath(componentType, componentName)
 
-		if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+// 		if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
 
-			data, err := getTemplateData(componentType, componentName)
-			if err != nil {
-				return err
-			}
+// 			data, err := getTemplateData(componentType, componentName)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			err = os.WriteFile(filePath, data, 0644)
-			if err != nil {
-				return err
-			}
+// 			err = os.WriteFile(filePath, data, 0644)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			fmt.Printf("created %s %s (path: %s)", componentType, componentName, filePath)
-		} else {
-			return fmt.Errorf("unable to create %s %s. file already exists (path: %s)", componentType, componentName, filePath)
-		}
+// 			fmt.Printf("created %s %s (path: %s)", componentType, componentName, filePath)
+// 		} else {
+// 			return fmt.Errorf("unable to create %s %s. file already exists (path: %s)", componentType, componentName, filePath)
+// 		}
 
-		return nil
-	},
-}
+// 		return nil
+// 	},
+// }
 
-func getFilePath(componentType string, componentName string) string {
-	folder := getComponentFolder(componentType)
-	extension := getComponentExtension(componentType)
+// func getFilePath(componentType string, componentName string) string {
+// 	folder := getComponentFolder(componentType)
+// 	extension := getComponentExtension(componentType)
 
-	fileName := sanitize.Name(componentName) + extension
+// 	fileName := sanitize.Name(componentName) + extension
 
-	return filepath.Join(folder, fileName)
-}
+// 	return filepath.Join(folder, fileName)
+// }
 
-func getComponentFolder(componentType string) string {
-	switch componentType {
-	case "request":
-		return "requests"
-	case "routine":
-		return "routines"
-	case "env":
-		return "env"
-	case "script":
-		return "scripts"
-	}
+// func getComponentFolder(componentType string) string {
+// 	switch componentType {
+// 	case "request":
+// 		return "requests"
+// 	case "routine":
+// 		return "routines"
+// 	case "env":
+// 		return "env"
+// 	case "script":
+// 		return "scripts"
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
-func getComponentExtension(componentType string) string {
-	switch componentType {
-	case "request":
-		return ".yml"
-	case "routine":
-		return ".yml"
-	case "env":
-		return ".yml"
-	case "script":
-		return ".js"
-	}
+// func getComponentExtension(componentType string) string {
+// 	switch componentType {
+// 	case "request":
+// 		return ".yml"
+// 	case "routine":
+// 		return ".yml"
+// 	case "env":
+// 		return ".yml"
+// 	case "script":
+// 		return ".js"
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
-func getTemplateData(componentType string, componentName string) ([]byte, error) {
-	templatePath := fmt.Sprintf(".templates/%s%s", componentType, getComponentExtension(componentType))
-	if _, err := os.Stat(templatePath); errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("could not find project %s template (looked in %s)", componentType, templatePath)
-	} else if err != nil {
-		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
-	}
+// func getTemplateData(componentType string, componentName string) ([]byte, error) {
+// 	templatePath := fmt.Sprintf(".templates/%s%s", componentType, getComponentExtension(componentType))
+// 	if _, err := os.Stat(templatePath); errors.Is(err, os.ErrNotExist) {
+// 		return nil, fmt.Errorf("could not find project %s template (looked in %s)", componentType, templatePath)
+// 	} else if err != nil {
+// 		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
+// 	}
 
-	data, err := os.ReadFile(templatePath)
+// 	data, err := os.ReadFile(templatePath)
 
-	if err != nil {
-		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
-	}
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error opening project %s template (path: %s)", componentType, templatePath)
+// 	}
 
-	data = []byte(strings.ReplaceAll(string(data), "${name}", componentName))
+// 	data = []byte(strings.ReplaceAll(string(data), "${name}", componentName))
 
-	return data, nil
-}
+// 	return data, nil
+// }
 
-func init() {
-	rootCmd.AddCommand(generateCmd)
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-}
+// func init() {
+// 	rootCmd.AddCommand(generateCmd)
+// 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+// }

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Asserts
-nav_order: 3
+nav_order: 4
 parent: Reference
 ---
 
@@ -40,3 +40,15 @@ For the full predicate reference, see [Reference -> Predicates](/nap/reference/p
 ### Expectation: `200`
 
 The expectation is the specific value we're testing against. For this assert to succeed, the result of our query (`status`) must equal the expectation (`200`).
+
+## Failures
+
+Assert failures are written to `stderr` and follow the form:
+```
+[ERROR] <request name>: Assert failed "<query> => <actual> <predicate> <expectation>"
+```
+
+For example:
+```
+[ERROR] Cat Breeds - Assertion/Capture Testing: Assert failed "jsonpath $.data[0].breed => Abyssinian matches ^Ayss.+"
+```
