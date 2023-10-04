@@ -20,6 +20,7 @@ kind: routine # required; defines the document as a routine
 name: my routine # optional; used to identify this routine
 steps: # array; at least one step is required. 
   - run: ./request-1.yml # required; the path to the target to run
+    iterations: # optional; path(s) to variable iterations to run for this step.
 ```
 
 ## Properties
@@ -42,11 +43,17 @@ A name used to identify the routine. This is used in any logs/output to refer to
 
 Defines one or more requests or subroutines to execute.
 
-### `steps[].run` - Path to run
+### `steps[].run` - Step run path
 
 `string`. Required. 
 
 The path to the request or subroutine to execute.
+
+### `steps[].iterations` - Step Iterations
+
+`string | array`. Optional. 
+
+One or more paths or globs pointing to environment files to load and iterate over for this step. If specified, the step will be run once for each environment file found. Each iteration is loaded on top of the existing set of variables. If no iterations are found then the step will run once with the normal environment.
 
 ## Requests
 
