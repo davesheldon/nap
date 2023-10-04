@@ -20,9 +20,13 @@ package naproutine
 import (
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/davesheldon/nap/napcontext"
+	"github.com/davesheldon/nap/napenv"
+	"github.com/davesheldon/nap/naputil"
 	"gopkg.in/yaml.v2"
 )
 
@@ -32,7 +36,56 @@ type Routine struct {
 }
 
 type RoutineStep struct {
-	Run string
+	Run        string
+	Iterations interface{}
+}
+
+func (step *RoutineStep) GetIterations(ctx *napcontext.Context) ([]*napcontext.Context, error) {
+	iterations := make([]*napcontext.Context, 0)
+
+	var environmentsToLoad []string = make([]string, 0)
+
+	switch step.Iterations.(type) {
+	case string:
+		if result, err := filepath.Glob(path.Join(ctx.WorkingDirectory, step.Iterations.(string))); err != nil {
+			return nil, err
+		} else {
+			environmentsToLoad = result
+		}
+	case []interface{}:
+		for _, v := range step.Iterations.([]interface{}) {
+			switch v.(type) {
+			case string:
+				if result, err := filepath.Glob(path.Join(ctx.WorkingDirectory, v.(string))); err != nil {
+					return nil, err
+				} else {
+					environmentsToLoad = append(environmentsToLoad, result...)
+				}
+			}
+		}
+	}
+
+	if environmentsToLoad != nil {
+		for _, v := range environmentsToLoad {
+			iteration := ctx.Clone(ctx.WorkingDirectory)
+			baseEnv := naputil.CloneMap(ctx.EnvironmentVariables)
+
+			result, err := napenv.AddEnvironmentFromPath(ctx.WorkingDirectory, v, baseEnv)
+			if err != nil {
+				return nil, err
+			}
+
+			iteration.EnvironmentVariables = result
+
+			iterations = append(iterations, iteration)
+		}
+	}
+
+	if len(iterations) == 0 {
+		iterations = append(iterations, ctx)
+	}
+
+	return iterations, nil
 }
 
 func NewStep(run string) *RoutineStep {

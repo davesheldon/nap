@@ -63,8 +63,6 @@ func (result *RoutineResult) Print(prefix string, context *napcontext.Context) {
 	if prefix == "" && result.Routine != nil && result.Routine.Name != "" {
 		fmt.Println("------------------------------------------------------")
 		fmt.Printf("Routine: %s\n", result.Routine.Name)
-		fmt.Printf("Directory: %s\n", context.WorkingDirectory)
-		fmt.Printf("Environments: %s\n", context.Environments)
 		fmt.Println("------------------------------------------------------")
 	}
 

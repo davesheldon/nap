@@ -18,19 +18,17 @@ cmd/run.go - this is the handler for the run command
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/davesheldon/nap/napcontext"
+	"github.com/davesheldon/nap/napenv"
 	"github.com/davesheldon/nap/naprunner"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 // runCmd represents the run command
@@ -46,6 +44,7 @@ var runCmd = &cobra.Command{
 
 		environmentVariables, err := loadEnvironment(runConfig)
 		if err != nil {
+			cmd.SilenceUsage = true
 			return err
 		}
 
@@ -62,8 +61,8 @@ var runCmd = &cobra.Command{
 				routineResult.Print("", napCtx)
 			}
 		} else {
-			for _, error := range routineResult.Errors {
-				fmt.Printf("[ERROR] %s\n", error.Error())
+			for _, err := range routineResult.Errors {
+				fmt.Printf("[ERROR] %s\n", err.Error())
 			}
 		}
 
@@ -79,62 +78,16 @@ var runCmd = &cobra.Command{
 	},
 }
 
-func fileExists(path string) bool {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-
-	return true
-}
-
 func loadEnvironment(runConfig *RunConfig) (map[string]string, error) {
 	environmentVariables := make(map[string]string)
 
 	for _, environmentFileNameOriginal := range runConfig.Environments {
-		if path.Ext(environmentFileNameOriginal) != ".yml" && path.Ext(environmentFileNameOriginal) != ".yaml" {
-			environmentFileNameOriginal = environmentFileNameOriginal + ".yml"
+		result, err := napenv.AddEnvironmentFromPath(runConfig.TargetDir, environmentFileNameOriginal, environmentVariables)
+		if err != nil {
+			return environmentVariables, err
 		}
 
-		environmentFileName := environmentFileNameOriginal
-
-		if !fileExists(environmentFileName) {
-			// try and find it relative to the target path
-			environmentFileName = filepath.Join(runConfig.TargetDir, "..", "env", environmentFileNameOriginal)
-		}
-
-		if !fileExists(environmentFileName) {
-			// try and find it relative to the target path
-			environmentFileName = filepath.Join(runConfig.TargetDir, "env", environmentFileNameOriginal)
-		}
-
-		if !fileExists(environmentFileName) {
-			// try and find it relative to the target path
-			environmentFileName = filepath.Join(runConfig.TargetDir, environmentFileNameOriginal)
-		}
-
-		if len(environmentFileNameOriginal) > 0 {
-			if _, err := os.Stat(environmentFileName); errors.Is(err, os.ErrNotExist) {
-				return environmentVariables, fmt.Errorf("environment '%s' not found", environmentFileNameOriginal)
-			} else if err != nil {
-				return environmentVariables, err
-			}
-
-			configData, err := os.ReadFile(environmentFileName)
-			if err != nil {
-				return environmentVariables, err
-			}
-
-			subMap := make(map[string]string)
-
-			err = yaml.Unmarshal(configData, &subMap)
-			if err != nil {
-				return environmentVariables, err
-			}
-
-			for k, v := range subMap {
-				environmentVariables[k] = v
-			}
-		}
+		environmentVariables = result
 	}
 
 	for k, v := range runConfig.Variables {

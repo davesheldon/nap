@@ -1,6 +1,6 @@
 # request-1.yml
 kind: request
-name: Cat Breeds - Assertion/Capture Testing
+name: ${name}${name2}Cat Breeds - Assertion/Capture Testing
 path: https://catfact.ninja/breeds
 asserts:
   - status in [200, 201]

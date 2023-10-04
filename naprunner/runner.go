@@ -62,6 +62,11 @@ func runScript(ctx *napcontext.Context, path string) *naproutine.ScriptResult {
 func runScriptInline(ctx *napcontext.Context, script string) *naproutine.ScriptResult {
 	result := new(naproutine.ScriptResult)
 
+	if err := napscript.SetupVm(ctx, RunPath); err != nil {
+		result.Error = err
+		return result
+	}
+
 	result.StartTime = time.Now()
 	_, err := ctx.ScriptVm.Run(script)
 	result.EndTime = time.Now()
@@ -112,6 +117,11 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 	}
 
 	result.EndTime = time.Now()
+
+	if err := napscript.SetupVm(ctx, RunPath); err != nil {
+		result.Error = fmt.Errorf("Error setting up js vm: %w", err)
+		return result
+	}
 
 	vmData, err := napscript.SetVmHttpData(ctx, result)
 	if err != nil {
@@ -305,13 +315,6 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 	childCh := make(chan *naproutine.RoutineStepResult)
 
-	err := napscript.SetupVm(ctx, RunPath)
-	if err != nil {
-		result.EndTime = time.Now()
-		result.Errors = append(result.Errors, err)
-		return result
-	}
-
 	for _, step := range routine.Steps {
 		var stepResult *naproutine.RoutineStepResult
 		stepResult = nil
@@ -332,42 +335,53 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			break
 		}
 
-		if stepType == "request" {
-			request, err := naprequest.LoadFromPath(stepPath, ctx)
+		iterations, err := step.GetIterations(ctx)
 
-			if err != nil {
-				stepResult = naproutine.StepError(step, err)
-				result.StepResults = append(result.StepResults, stepResult)
-				break
-			} else {
-				stepResult = naproutine.StepRequestResult(step, runRequest(ctx, stepPath, request))
+		if err != nil {
+			stepResult = naproutine.StepError(step, err)
+			result.StepResults = append(result.StepResults, stepResult)
+			break
+		}
+
+		for _, iterationCtx := range iterations {
+
+			if stepType == "request" {
+				request, err := naprequest.LoadFromPath(stepPath, iterationCtx)
+
+				if err != nil {
+					stepResult = naproutine.StepError(step, err)
+					result.StepResults = append(result.StepResults, stepResult)
+					break
+				} else {
+					stepResult = naproutine.StepRequestResult(step, runRequest(iterationCtx, stepPath, request))
+				}
 			}
-		}
 
-		if stepType == "script" {
-			stepResult = naproutine.StepScriptResult(step, runScript(ctx, stepPath))
-		}
-
-		if stepType == "routine" {
-			subroutineCtx := ctx.Clone(filepath.Dir(stepPath))
-			subroutine, err := naproutine.LoadFromPath(stepPath, subroutineCtx)
-
-			if err != nil {
-				stepResult = naproutine.StepError(step, err)
-			} else {
-				waitCount = waitCount + 1
-
-				go runRoutine(subroutineCtx, subroutine, step, childCh)
-				// we'll get the results after the loop finishes
-				continue
+			if stepType == "script" {
+				stepResult = naproutine.StepScriptResult(step, runScript(iterationCtx, stepPath))
 			}
-		}
 
-		if stepResult == nil {
-			stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", stepPath))
-		}
+			if stepType == "routine" {
+				subroutineCtx := iterationCtx.Clone(filepath.Dir(stepPath))
+				subroutine, err := naproutine.LoadFromPath(stepPath, subroutineCtx)
 
-		result.StepResults = append(result.StepResults, stepResult)
+				if err != nil {
+					stepResult = naproutine.StepError(step, err)
+				} else {
+					waitCount = waitCount + 1
+
+					go runRoutine(subroutineCtx, subroutine, step, childCh)
+					// we'll get the results after the loop finishes
+					continue
+				}
+			}
+
+			if stepResult == nil {
+				stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", stepPath))
+			}
+
+			result.StepResults = append(result.StepResults, stepResult)
+		}
 	}
 
 	for i := 0; i < waitCount; i++ {
