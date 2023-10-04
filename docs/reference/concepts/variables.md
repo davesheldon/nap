@@ -39,7 +39,7 @@ For the full environment reference, see [File Types -> Environments](/reference/
 Individual variables may be added via the `run` command's `--param` flag.
 
 {: .highlight }
-For the `--param` command line reference, see [Commands -> Run](/reference/commands/run#--param---Parameter).
+For the `--param` command line reference, see [Commands -> Run](/reference/commands/run#--param---parameter).
 
 ## In Scripts
 
