@@ -4,7 +4,7 @@ title: Captures
 nav_order: 2
 parent: Concepts
 grand_parent: Reference
-permalink: /reference/concepts/asserts
+permalink: /reference/concepts/captures
 ---
 
 {: .fs-10 .fw-300 }
