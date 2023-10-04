@@ -1,8 +1,11 @@
 ---
 layout: default
 title: Scripts
-nav_order: 10
+nav_order: 4
 parent: Reference
+parent: File Types
+grand_parent: Reference
+permalink: /reference/file-types/scripts
 ---
 
 {: .fs-10 .fw-300 }

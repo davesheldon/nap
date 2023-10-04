@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Asserts
-nav_order: 4
-parent: Reference
+nav_order: 1
+parent: Concepts
+grand_parent: Reference
+permalink: /reference/concepts/asserts
 ---
 
 {: .fs-10 .fw-300 }
@@ -28,14 +30,14 @@ Let's break this down into the three parts.
 The query tells Nap what part of the response we want to validate. In this case we're checking the HTTP response status.
 
 {: .highlight }
-For the full query reference, see [Reference -> Queries](/reference/queries).
+For the full query reference, see [Concepts -> Queries](/reference/concepts/queries).
 
 ### Predicate: `==`
 
 The predicate tells Nap what sort of validation we want this assert to perform. The `==` means we're testing for equality.
 
 {: .highlight }
-For the full predicate reference, see [Reference -> Predicates](/reference/predicates).
+For the full predicate reference, see [Concepts -> Predicates](/reference/concepts/predicates).
 
 ### Expectation: `200`
 

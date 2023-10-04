@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Queries
-nav_order: 6
-parent: Reference
+nav_order: 3
+parent: Concepts
+grand_parent: Reference
+permalink: /reference/concepts/queries
 ---
 
 {: .fs-10 .fw-300 }

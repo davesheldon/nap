@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Variables
-nav_order: 9
-parent: Reference
+nav_order: 5
+parent: Concepts
+grand_parent: Reference
+permalink: /reference/concepts/variables
 ---
 
 {: .fs-10 .fw-300 }
@@ -30,18 +32,18 @@ Variables are injected into requests and routines whenever they're loaded. Varia
 Variables may be added en masse via environment files.
 
 {: .highlight }
-For the full environment reference, see [Reference -> Environments](/reference/environments).
+For the full environment reference, see [File Types -> Environments](/reference/file-types/environments).
 
 ## Inline
 
 Individual variables may be added via the `run` command's `--param` flag.
 
 {: .highlight }
-For the `--param` command line reference, see [Reference -> Commands -> Run](/reference/commands/run#--param---Parameter).
+For the `--param` command line reference, see [Commands -> Run](/reference/commands/run#--param---Parameter).
 
 ## In Scripts
 
 Variables may be read and mutated from scripts via `nap.env.get(key)` and `nap.env.set(key, value)`.
 
 {: .highlight }
-For the full script reference, see [Reference -> Scripts](/reference/scripts).
+For the full script reference, see [File Types -> Scripts](/reference/file-types/scripts).

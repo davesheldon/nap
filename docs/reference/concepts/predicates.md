@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Predicates
-nav_order: 7
-parent: Reference
+nav_order: 4
+parent: Concepts
+grand_parent: Reference
+permalink: /reference/concepts/predicates
 ---
 
 {: .fs-10 .fw-300 }
@@ -26,7 +28,7 @@ A predicate will always appear _between_ a query and a value (such as an assert'
 | `contains`   | Query contains value as a `string`.         | `body contains Hello, World!` |
 | `startswith` | Query begins with value as a `string`.      | `body startswith Hello`       |
 | `endswith`   | Query ends with value as a `string`.        | `body endswith World!`        |
-| `matches`    | Query matches value as a regular expression | `body endswith World!`        |
+| `matches`    | Query matches value as a regular expression | `body matches ^Hello.+$`        |
 | `in`         | Query matches one of a set of values        | `status in [ 200, 201 ]`      |
 
 ## Negation

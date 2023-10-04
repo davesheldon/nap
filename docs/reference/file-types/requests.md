@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Requests
-nav_order: 2
-parent: Reference
+nav_order: 1
+parent: File Types
+grand_parent: Reference
+permalink: /reference/file-types/requests
 ---
 
 {: .fs-10 .fw-300 }
@@ -142,7 +144,7 @@ Defines an relative path to a script to run after the request.
 A set of captures to perform. Any number of variables may be captured as YAML keys.
 
 {: .highlight }
-For the full capture reference, see [Reference -> Captures](/reference/captures).
+For the full capture reference, see [Concepts -> Captures](/reference/concepts/captures).
 
 ### `asserts` - Asserts
 
@@ -151,4 +153,4 @@ For the full capture reference, see [Reference -> Captures](/reference/captures)
 Defines the asserts to perform. Any number of asserts may be specified.
 
 {: .highlight }
-For the full assert reference, see [Reference -> Asserts](/reference/asserts).
+For the full assert reference, see [Concepts -> Asserts](/reference/concepts/asserts).

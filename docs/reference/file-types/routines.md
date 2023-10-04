@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Routines
-nav_order: 3
-parent: Reference
+nav_order: 2
+parent: File Types
+grand_parent: Reference
+permalink: /reference/file-types/routines
 ---
 
 {: .fs-10 .fw-300 }

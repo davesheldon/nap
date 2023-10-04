@@ -9,4 +9,4 @@ has_children: true
 # Reference
 
 {: .fs-6 .fw-300 }
-See the following sections for file formats, structure and semantics of each concept Nap encapsulates.
+See the following sections for the full Nap reference documentation.

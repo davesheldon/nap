@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Captures
-nav_order: 5
-parent: Reference
+nav_order: 2
+parent: Concepts
+grand_parent: Reference
+permalink: /reference/concepts/asserts
 ---
 
 {: .fs-10 .fw-300 }
@@ -38,4 +40,4 @@ The variable tells Nap where to store this capture. This variable will overwrite
 The query tells Nap what part of the response we want to capture. This query will retrieve the `myVal` property from the root object in the repsonse body, assuming it is in JSON format.
 
 {: .highlight }
-For the full query reference, see [Reference -> Queries](/reference/queries).
+For the full query reference, see [Concepts -> Queries](/reference/concepts/queries).
