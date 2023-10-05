@@ -21,6 +21,14 @@ Nap is a command-line interface (CLI) for running HTTP requests using YAML files
 
 Browse the docs to learn more about how Nap can save you and your customers time and frustration with better, faster test automation.
 
+## Why Nap?
+
+Here are just a few of the reasons our users enjoy Nap:
+
+- **_LUDICROUS SPEED._** Nap is able to break apart your test suite and run different parts of it at the same time. So your entire run will only take about as long as your slowest scenario.
+- **_EASY SYNTAX._** With Nap, there's no need to memorize a bunch of cURL flags or open a big fancy editor to design your tests. Each request is a single, compact file.
+- **_POWERFUL EXPRESSIONS._** Write your tests in expressions that make sense at first glance. Asserts, variable captures and even explicit javascript are all at your disposal.
+
 ## Getting Started
 
 There are two ways to get started using Nap.
@@ -29,7 +37,9 @@ There are two ways to get started using Nap.
 
 You can download directly from the dist folder on Github, or use one of the quick download buttons:
 
-[Windows 64-bit executable](https://github.com/davesheldon/nap/releases/download/v0.4.0/nap.exe){: .btn}
+[v0.4.0 - Windows (x64)](https://github.com/davesheldon/nap/releases/download/v0.4.0/nap.exe){: .btn}
+
+Once downloaded, copy `nap.exe`'s location into your `$PATH` for convenience.
 
 ### Using Go
 
