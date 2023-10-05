@@ -88,17 +88,19 @@ func (step *RoutineStep) GetIterations(ctx *napcontext.Context) ([]*napcontext.C
 	return iterations, nil
 }
 
-func NewStep(run string) *RoutineStep {
+func NewStep(run string, iterations interface{}) *RoutineStep {
 	step := new(RoutineStep)
 	step.Run = run
+	step.Iterations = iterations
 	return step
 }
 
-func NewRoutine(ctx *napcontext.Context, runs ...string) *Routine {
+func NewRoutine(ctx *napcontext.Context, name string, runs ...string) *Routine {
 	routine := new(Routine)
+	routine.Name = name
 
 	for _, run := range runs {
-		routine.Steps = append(routine.Steps, NewStep(run))
+		routine.Steps = append(routine.Steps, NewStep(run, nil))
 	}
 
 	return routine

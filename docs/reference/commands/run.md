@@ -26,6 +26,7 @@ Flags:
   -e, --env path               add environment variables from a file path
   -h, --help                   help for run
   -p, --param <name>=<value>   add a single variable to the run as a <name>=<value> pair
+  -q, --quiet                  suppress output until the end
 
 Global Flags:
   -v, --verbose   verbose output
@@ -50,8 +51,16 @@ Environments can be referenced by path or by just the file name. If a full path 
 
 ### `--param` - Parameter
 
-Alias: `-p` `<name>=<value>`. Optional
+Alias: `-p`. `<name>=<value>`. Optional
 
 Usage: `-p var1=val1 [-p var2=val2] ...`
 
 Initialize a variable. To include multiple parameters, use the flag multiple times. If the same variable name is supplied multiple times, only the last value will be used. The `--param` flag will also overwrite values loaded via the `--env` flag.
+
+### `--quiet` - Parameter
+
+Alias: `-q`. `bool`. Optional
+
+Usage: `nap run <path> -q`
+
+Sets nap to run in quiet mode. This prevents progress bars and other output from showing during the run. A summary is still displayed after the run finishes.

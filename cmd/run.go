@@ -22,6 +22,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/davesheldon/nap/napcontext"
@@ -48,9 +49,12 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		napCtx := napcontext.New(".", runConfig.Environments, environmentVariables)
+		var wg sync.WaitGroup
+		napCtx := napcontext.New(".", runConfig.Environments, environmentVariables, &wg, runConfig.Quiet)
 
 		routineResult := naprunner.RunPath(napCtx, runConfig.Target)
+
+		napCtx.Complete()
 
 		end := time.Now()
 
@@ -104,6 +108,7 @@ type RunConfig struct {
 	Environments []string
 	Variables    map[string]string
 	Verbose      bool
+	Quiet        bool
 }
 
 func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
@@ -114,6 +119,7 @@ func newRunConfig(cmd *cobra.Command, args []string) *RunConfig {
 	config.Environments, _ = cmd.Flags().GetStringArray("env")
 	config.Verbose, _ = cmd.Flags().GetBool("verbose")
 	config.Variables = make(map[string]string)
+	config.Quiet, _ = cmd.Flags().GetBool("quiet")
 
 	params, _ := cmd.Flags().GetStringArray("param")
 
@@ -132,4 +138,5 @@ func init() {
 
 	runCmd.Flags().StringArrayP("env", "e", []string{}, "add environment variables from a file `path`")
 	runCmd.Flags().StringArrayP("param", "p", []string{}, "add a single variable to the run as a `<name>=<value>` pair")
+	runCmd.Flags().BoolP("quiet", "q", false, "suppress output until the end")
 }

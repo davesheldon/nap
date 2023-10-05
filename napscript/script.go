@@ -34,13 +34,13 @@ import (
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) *naproutine.RoutineResult) error {
-	err := ctx.ScriptVm.Set("napRun", func(call otto.FunctionCall) otto.Value {
+	err := ctx.ScriptContext.Vm.Set("napRun", func(call otto.FunctionCall) otto.Value {
 
 		path := call.Argument(0).String()
 
 		result := runPath(ctx, path)
 
-		v, _ := ctx.ScriptVm.ToValue(result)
+		v, _ := ctx.ScriptContext.Vm.ToValue(result)
 		return v
 	})
 
@@ -48,7 +48,7 @@ func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) 
 		return err
 	}
 
-	err = ctx.ScriptVm.Set("napEnvSet", func(call otto.FunctionCall) otto.Value {
+	err = ctx.ScriptContext.Vm.Set("napEnvSet", func(call otto.FunctionCall) otto.Value {
 		ctx.EnvironmentVariables[call.Argument(0).String()] = call.Argument(1).String()
 
 		return otto.Value{}
@@ -58,8 +58,8 @@ func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) 
 		return err
 	}
 
-	err = ctx.ScriptVm.Set("napEnvGet", func(call otto.FunctionCall) otto.Value {
-		result, _ := ctx.ScriptVm.ToValue(ctx.EnvironmentVariables[call.Argument(0).String()])
+	err = ctx.ScriptContext.Vm.Set("napEnvGet", func(call otto.FunctionCall) otto.Value {
+		result, _ := ctx.ScriptContext.Vm.ToValue(ctx.EnvironmentVariables[call.Argument(0).String()])
 		return result
 	})
 
@@ -67,15 +67,14 @@ func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) 
 		return err
 	}
 
-	err = ctx.ScriptVm.Set("napFail", func(call otto.FunctionCall) otto.Value {
+	err = ctx.ScriptContext.Vm.Set("napFail", func(call otto.FunctionCall) otto.Value {
 		vals := []string{}
 
 		for _, v := range call.ArgumentList {
 			vals = append(vals, v.String())
 		}
 
-		ctx.ScriptFailure = true
-		ctx.ScriptFailureMessage = strings.Join(vals, " ")
+		ctx.ScriptContext.Error = fmt.Errorf(strings.Join(vals, " "))
 
 		return otto.Value{}
 	})
@@ -84,7 +83,7 @@ func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) 
 		return err
 	}
 
-	ctx.ScriptVm.Set("__log__", func(call otto.FunctionCall) otto.Value {
+	ctx.ScriptContext.Vm.Set("__log__", func(call otto.FunctionCall) otto.Value {
 		vals := []string{}
 
 		for _, v := range call.ArgumentList {
@@ -92,15 +91,15 @@ func SetupVm(ctx *napcontext.Context, runPath func(*napcontext.Context, string) 
 		}
 
 		for _, v := range vals {
-			ctx.ScriptOutput = append(ctx.ScriptOutput, v)
+			ctx.ScriptContext.Output = append(ctx.ScriptContext.Output, v)
 		}
 
 		return otto.Value{}
 	})
 
-	ctx.ScriptVm.Run("console.log = __log__;")
+	ctx.ScriptContext.Vm.Run("console.log = __log__;")
 
-	_, err = ctx.ScriptVm.Run(`
+	_, err = ctx.ScriptContext.Vm.Run(`
 var nap = { 
 	env: { 
 		get: napEnvGet, 
@@ -135,7 +134,7 @@ func SetVmHttpData(ctx *napcontext.Context, result *naprequest.RequestResult) (*
 		return nil, err
 	}
 	// have to do it this way for now because otto won't serialize it properly
-	_, err = ctx.ScriptVm.Run(fmt.Sprintf("nap.http = %s;", string(jsData)))
+	_, err = ctx.ScriptContext.Vm.Run(fmt.Sprintf("nap.http = %s;", string(jsData)))
 
 	if err != nil {
 		return nil, err

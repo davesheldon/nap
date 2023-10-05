@@ -13,40 +13,106 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-context.go - this data represents a runnable context with its own set of environment variables and javascript virtual machine
+context.go - this data represents a runnable context with its own set of environment variables and javascript context
 */
 package napcontext
 
 import (
-	"github.com/robertkrimen/otto"
+	"fmt"
+	"sync"
+
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 type Context struct {
-	ScriptVm             *otto.Otto
 	Environments         []string
 	EnvironmentVariables map[string]string
-	ScriptFailure        bool
-	ScriptFailureMessage string
-	ScriptOutput         []string
 	WorkingDirectory     string
+	ScriptContext        *ScriptContext
+
+	progress  *mpb.Progress
+	waitGroup *sync.WaitGroup
+	quiet     bool
 }
 
-func New(workingDirectory string, environments []string, environmentVariables map[string]string) *Context {
+func New(workingDirectory string, environments []string, environmentVariables map[string]string, wg *sync.WaitGroup, quiet bool) *Context {
 	ctx := new(Context)
 
+	ctx.WorkingDirectory = workingDirectory
+	ctx.Environments = environments
 	ctx.EnvironmentVariables = make(map[string]string)
 
 	for k, v := range environmentVariables {
 		ctx.EnvironmentVariables[k] = v
 	}
 
-	ctx.ScriptVm = otto.New()
+	ctx.waitGroup = wg
+	ctx.quiet = quiet
+	if !quiet {
+		ctx.progress = mpb.New(mpb.WithWaitGroup(wg))
+	}
 
-	ctx.WorkingDirectory = workingDirectory
+	ctx.ScriptContext = newScriptContext()
 
 	return ctx
 }
 
-func (ctx *Context) Clone(workingDirectory string) *Context {
-	return New(workingDirectory, ctx.Environments, ctx.EnvironmentVariables)
+func (old *Context) Clone(workingDirectory string) *Context {
+	ctx := new(Context)
+
+	ctx.Environments = old.Environments
+	ctx.EnvironmentVariables = old.EnvironmentVariables
+	ctx.ScriptContext = newScriptContext()
+	ctx.WorkingDirectory = workingDirectory
+	ctx.progress = old.progress
+	ctx.waitGroup = old.waitGroup
+	ctx.quiet = old.quiet
+
+	return ctx
+}
+
+type Progress struct {
+	name  string
+	steps int64
+	bar   *mpb.Bar
+}
+
+func (ctx *Context) ProgressStart(name string, steps int64) *Progress {
+	if ctx.quiet {
+		return nil
+	}
+	ctx.waitGroup.Add(1)
+
+	progress := new(Progress)
+	progress.name = name
+	progress.steps = steps
+	progress.bar = ctx.progress.AddBar(steps,
+		mpb.PrependDecorators(
+			decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+		),
+		mpb.AppendDecorators(
+			decor.OnComplete(decor.CountersNoUnit("%d / %d", decor.WCSyncWidth), fmt.Sprintf("done (%d / %d).", steps, steps)),
+		),
+	)
+
+	return progress
+}
+
+func (ctx *Context) ProgressIncrement(progress *Progress) {
+	if ctx.quiet {
+		return
+	}
+	progress.bar.Increment()
+
+	if progress.bar.Current() == progress.steps {
+		defer ctx.waitGroup.Done()
+	}
+}
+
+func (ctx *Context) Complete() {
+	if ctx.quiet {
+		return
+	}
+	ctx.progress.Wait()
 }

@@ -73,15 +73,25 @@ func (result *RoutineResult) Print(prefix string, context *napcontext.Context) {
 	}
 }
 
-func (result *RoutineResult) GetPassFailCounts() (passed int, failed int) {
+func (result *RoutineResult) GetPassFailCounts(parents ...*RoutineResult) (passed int, failed int) {
 	passed = 0
 	failed = 0
 
 	for _, v := range result.StepResults {
 		if v.SubroutineResult != nil {
-			subPassed, subFailed := v.SubroutineResult.GetPassFailCounts()
+			subPassed, subFailed := v.SubroutineResult.GetPassFailCounts(append(parents, result)...)
 			passed += subPassed
 			failed += subFailed
+
+			// first routine is system-generated, don't count it
+			if len(parents) > 0 {
+				if subPassed > 0 {
+					passed += 1
+				} else {
+					failed += 1
+				}
+			}
+
 			continue
 		}
 
