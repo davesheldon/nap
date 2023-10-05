@@ -4,17 +4,3 @@ name: example subroutine 1
 steps:
   - run: request-1.yml
   - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml
-  - run: request-1.yml
-  - run: request-2.yml

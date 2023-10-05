@@ -4,5 +4,3 @@ name: example routine 1
 steps:
   - run: subroutine-1.yml # yep, you can call routines from routines.
   - run: subroutine-2.yml # additional sub-routines run in PARALLEL 😱
-  - run: subroutine-1.yml # yep, you can call routines from routines.
-  - run: subroutine-2.yml # additional sub-routines run in PARALLEL 😱
