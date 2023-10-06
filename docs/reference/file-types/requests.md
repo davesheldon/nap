@@ -27,6 +27,13 @@ body: | # optional; HTTP request body
   {
     "myvar": "myval"
   }
+graphql: # optional; send as GraphQL query
+  query: | # required; a GraphQL query
+    {
+      ...
+    }
+  variables: # optional; key/value GraphQL variables
+    myvar: myval # optional; example of a GraphQL variable
 preRequestScript: | # optional; Javascript to run prior to the request
   console.log("Hello, World!");
 preRequestScriptFile: ./hello-world.js # optional; script file to run prior to the request
@@ -112,6 +119,24 @@ body:
   someField: someValue # fields are added inline
   someFile:  "@file.txt" # attachments may be added by their relative path and are prefixed with @ 
 ```
+
+### `graphql` - GraphQL data
+
+`object`. Optional.
+
+If present, defines the request as a GraphQL request, which sets the `verb` to `POST` and `headers["Content-Type"]` to `application/json`.
+
+### `graphql.query` - GraphQL Query
+
+`string`. Required.
+
+Sets the query in the GraphQL payload. Accepts either an inline query or a file-path via the `@` prefix.
+
+### `graphql.variables` - GraphQL Query
+
+`object`. Optional.
+
+Sets the variables in the GraphQL payload. Any number of variables may be included as YAML properties.
 
 ### `preRequestScript` - Pre-request script
 

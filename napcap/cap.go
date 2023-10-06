@@ -15,7 +15,7 @@ limitations under the License.
 
 capture.go - this file contains logic for evaluating captures
 */
-package napcapture
+package napcap
 
 import (
 	"github.com/davesheldon/nap/napcontext"
@@ -23,8 +23,12 @@ import (
 	"github.com/davesheldon/nap/napscript"
 )
 
-func CaptureResponse(variable string, query string, ctx *napcontext.Context, vmData *napscript.VmHttpData) error {
-	actual, err := napquery.Eval(query, vmData)
+var (
+	Query = napquery.Eval
+)
+
+func CaptureQuery(variable string, query string, ctx *napcontext.Context, vmData *napscript.VmHttpData) error {
+	actual, err := Query(query, vmData)
 
 	if err != nil {
 		return err

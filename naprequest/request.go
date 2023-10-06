@@ -35,10 +35,11 @@ type Request struct {
 	TimeoutSeconds        int `yaml:"timeoutSeconds"`
 	Headers               map[string]string
 	Body                  interface{}
-	PreRequestScript      string `yaml:"preRequestScript"`
-	PostRequestScript     string `yaml:"postRequestScript"`
-	PreRequestScriptFile  string `yaml:"preRequestScriptFile"`
-	PostRequestScriptFile string `yaml:"postRequestScriptFile"`
+	GraphQL               *GraphQLOptions `yaml:"graphql"`
+	PreRequestScript      string          `yaml:"preRequestScript"`
+	PostRequestScript     string          `yaml:"postRequestScript"`
+	PreRequestScriptFile  string          `yaml:"preRequestScriptFile"`
+	PostRequestScriptFile string          `yaml:"postRequestScriptFile"`
 	Captures              map[string]string
 	Asserts               []string
 	Verbose               bool
@@ -46,6 +47,11 @@ type Request struct {
 	// aliases
 	Url    string
 	Method string
+}
+
+type GraphQLOptions struct {
+	Query     string      `json:"query"`
+	Variables interface{} `json:"variables"`
 }
 
 func parse(data []byte) (*Request, error) {

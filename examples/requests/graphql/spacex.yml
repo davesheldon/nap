@@ -1,0 +1,8 @@
+# spacex.yml
+kind: request
+name: SpaceX CEO
+path:  https://spacex-production.up.railway.app/graphql
+graphql: 
+  query: "@payload.txt"
+asserts:
+  - jsonpath $.data.company.ceo == Elon Musk

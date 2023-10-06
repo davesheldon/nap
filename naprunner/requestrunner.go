@@ -31,12 +31,15 @@ import (
 	"time"
 
 	"github.com/davesheldon/nap/napassert"
-	"github.com/davesheldon/nap/napcapture"
+	"github.com/davesheldon/nap/napcap"
 	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/napquery"
 	"github.com/davesheldon/nap/naprequest"
 	"github.com/davesheldon/nap/napscript"
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Request) *naprequest.RequestResult {
 	result := new(naprequest.RequestResult)
@@ -84,7 +87,7 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 	}
 
 	for variable, query := range request.Captures {
-		err := napcapture.CaptureResponse(variable, query, ctx, vmData)
+		err := napcap.CaptureQuery(variable, query, ctx, vmData)
 		if err != nil {
 			result.Error = err
 			return result
@@ -143,9 +146,30 @@ func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response
 	}
 
 	var content io.Reader
-	bodyAsString := fmt.Sprint(r.Body)
-	if r.Body != nil && len(bodyAsString) > 0 {
 
+	if r.GraphQL != nil {
+		if strings.HasPrefix(r.GraphQL.Query, "@") {
+			gqlPayloadFile := r.GraphQL.Query[1:]
+			gqlFullPath := filepath.Join(workingDirectory, gqlPayloadFile)
+			gqlData, err := os.ReadFile(gqlFullPath)
+			if err != nil {
+				return nil, err
+			}
+			r.GraphQL.Query = string(gqlData)
+		}
+
+		graphqlPayload, err := json.Marshal(&r.GraphQL)
+		if err != nil {
+			return nil, err
+		}
+
+		content = bytes.NewBuffer(graphqlPayload)
+		r.Verb = "POST"
+		if r.Headers == nil {
+			r.Headers = make(map[string]string)
+		}
+		r.Headers["Content-Type"] = "application/json"
+	} else if bodyAsString := fmt.Sprint(r.Body); r.Body != nil && len(bodyAsString) > 0 {
 		if strings.HasPrefix(r.Headers["Content-Type"], "multipart/form-data") {
 			bodyAsMap, ok := r.Body.(map[interface{}]interface{})
 
@@ -168,8 +192,8 @@ func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response
 			r.Headers["Content-Type"] = newHeader
 			content = formData
 		} else if strings.HasPrefix(bodyAsString, "@") {
-			bodyAsString = bodyAsString[1:]
-			pathToPayload := filepath.Join(workingDirectory, bodyAsString)
+			bodyFileName := bodyAsString[1:]
+			pathToPayload := filepath.Join(workingDirectory, bodyFileName)
 			file, err := os.ReadFile(pathToPayload)
 			if err != nil {
 				return nil, err

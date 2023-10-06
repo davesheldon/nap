@@ -239,7 +239,7 @@ func TestAsserts(t *testing.T) {
 			result := napassert.Execute(test.assert, test.actual) == nil
 
 			if result != test.shouldPass {
-				t.Errorf("%s: expected passing=%v, got %v", name, test.shouldPass, result)
+				t.Errorf("Expected passing=%v, got %v", test.shouldPass, result)
 			}
 		})
 	}
