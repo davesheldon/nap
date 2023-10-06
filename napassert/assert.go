@@ -57,7 +57,7 @@ func NewAssert(query string, predicate string, expectation string) *Assert {
 	return assert
 }
 
-func AssertResponse(assert *Assert, actual string) error {
+func Execute(assert *Assert, actual string) error {
 	query := assert.Query
 	predicate := assert.Predicate
 	expectation := assert.Expectation
@@ -163,23 +163,29 @@ func AssertResponse(assert *Assert, actual string) error {
 			break
 		}
 
+		in := false
+
 		for _, val := range validValues {
 			strVal := fmt.Sprint(val)
-			result = strVal == actual
+			in = strVal == actual
 
-			if result != desiredResult {
+			if !in {
 
 				// string didn't compare, let's parse to float and try again
 				floatVal, err := strconv.ParseFloat(strVal, 64)
 				floatActual, err2 := strconv.ParseFloat(actual, 64)
 
-				result = err == nil && err2 == nil && floatVal == floatActual
+				if err == nil && err2 == nil {
+					in = floatVal == floatActual
+				}
+
 			}
 
-			if result == desiredResult {
+			if in {
 				break
 			}
 		}
+		result = in
 	default:
 		return fmt.Errorf("Unrecognized predicate \"%s\"", predicate)
 	}
