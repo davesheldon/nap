@@ -4,22 +4,22 @@ title: Home
 nav_order: 1
 ---
 {: .fs-10 .fw-300 }
-# Achieve _FAST_ HTTP test automation without all the fuss.
+# Lightning-Fast, Accurate, Open Source API Test Automation
 
 {: .fs-6 .fw-300 }
-Nap is a tool for building, running and testing requests over HTTP.
+Nap is a command-line tool that utilizes YAML files to test APIs.
 
 ![mpb](https://github.com/davesheldon/nap/assets/7782805/e7d70e5e-6ea3-4bb8-b909-e770ec9298f7)
 
 {: .fs-6 .fw-300 }
-Run large-scale workloads in a fraction of the time. 
+Run large-scale workloads in a fraction of the time.
 
-Nap super-charges your test automation workflow with parallel execution, breaking up test cases into groups that can be run in parallel. 
+Nap super-charges your test automation workflow with parallel execution, breaking up test cases into groups that can be run in parallel.
 
 {: .fs-6 .fw-300 }
 Quickly and collaboratively test your HTTP APIs.
 
-Nap's syntax is simple enough to quickly jot down during the design process. Powerful asserts make writing test cases a breeze. The declarative YAML format means you can check your tests into source control to share them with your team.
+Nap's syntax is simple enough to quickly jot down during the design process. Powerful asserts make writing test cases a breeze. Nap's declarative YAML format means you can check your tests into source control to share them with your team.
 
 {: .fs-6 .fw-300 }
 Run locally or integrate with your favorite CI/CD tool. 
@@ -39,9 +39,9 @@ Browse the docs to learn more about how Nap can save you and your customers time
 
 Here are just a few of the reasons our users enjoy Nap:
 
-- **_LUDICROUS SPEED._** Nap is able to break apart your test suite and run different parts of it at the same time. Even large-scale workloads only take about as long as your slowest scenario.
-- **_EASY SYNTAX._** With Nap, there's no need to memorize a bunch of cURL flags or open a big fancy editor to design your tests. Each request is a single, compact file.
-- **_POWERFUL EXPRESSIONS._** Write your tests in expressions that make sense at first glance. Asserts, variable captures and even explicit javascript are all at your disposal.
+- **_REMARKABLE SPEED._** Nap is able to break apart your test suite and run different parts of it at the same time. Even large-scale workloads only take about as long as your slowest scenario.
+- **_SIMPLIFIED SYNTAX._** With Nap, there's no need to memorize a bunch of cURL flags or open a big fancy editor to design your tests. Each request is a single, compact file.
+- **_VERSATILE EXPRESSIONS._** Write your tests in expressions that make sense at first glance. Asserts, variable captures and even explicit javascript are all at your disposal.
 
 ## Getting Started
 
@@ -51,7 +51,7 @@ There are two ways to get started using Nap.
 
 You can download directly from the dist folder on Github, or use one of the quick download buttons:
 
-[v0.4.1 - Windows (x64)](https://github.com/davesheldon/nap/releases/download/v0.4.1/nap.exe){: .btn .btn-primary} [Other Platforms](https://github.com/davesheldon/nap/tree/main/dist/){: .btn}
+[Download for Windows (x64) - v0.4.1](https://github.com/davesheldon/nap/releases/download/v0.4.1/nap.exe){: .btn .btn-primary} [Other Platforms (View All)](https://github.com/davesheldon/nap/tree/main/dist/){: .btn}
 
 Once downloaded, add nap's location into your `$PATH` for convenience.
 
