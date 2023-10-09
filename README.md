@@ -1,4 +1,4 @@
-Nap is a command-line interface (CLI) for running HTTP requests using YAML files
+Nap is a command-line tool that utilizes YAML files to test APIs.
 
 ## Documentation
 

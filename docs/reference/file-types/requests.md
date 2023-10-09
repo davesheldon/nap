@@ -132,7 +132,7 @@ If present, defines the request as a GraphQL request, which sets the `verb` to `
 
 Sets the query in the GraphQL payload. Accepts either an inline query or a file-path via the `@` prefix.
 
-### `graphql.variables` - GraphQL Query
+### `graphql.variables` - GraphQL Variables
 
 `object`. Optional.
 

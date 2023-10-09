@@ -17,13 +17,13 @@ A query describes a part of an HTTP response.
 
 Each query begins with a keyword. Here is a table of all supported keywords and their functions.
 
-| Keyword | Description |
-|:--------|:------------|
-| `body` | The raw HTTP response body, expressed as a string |
-| `duration` | The HTTP execution duration in milliseconds |
-| `header` | The value of an HTTP response header |
-| `jsonpath` | The result of a jsonpath expression |
-| `status` | The numeric HTTP response status code |
+| Keyword     | Description                                       |
+|:------------|:--------------------------------------------------|
+| `body`      | The raw HTTP response body, expressed as a string |
+| `duration`  | The HTTP execution duration in milliseconds       |
+| `header`    | The value of an HTTP response header              |
+| `jsonpath`  | The result of a jsonpath expression               |
+| `status`    | The numeric HTTP response status code             |
 
 ## Filters
 

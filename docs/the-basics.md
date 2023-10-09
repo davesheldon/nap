@@ -111,6 +111,6 @@ Run finished in 326ms. 4/4 succeeded.
 This is the power of Nap. Since `subroutine-1.yml` and `subroutine-2.yml` aren't blocking each other, we can write a very large set of tests and have many of them running in parallel, making the whole test run much, much faster than solutions such as Postman or a regular bash script using `curl`.
 
 {: .warning }
-Be sure not to reference a routine from itself. Unless you like stalling forever, of course.
+Be sure not to reference a routine from itself, even indirectly. This will create an infinite loop, and your workload will stall!
 
 You can view the full code for example on Github [here](https://github.com/davesheldon/nap/tree/main/examples/routines/basic).

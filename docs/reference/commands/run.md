@@ -57,7 +57,7 @@ Usage: `-p var1=val1 [-p var2=val2] ...`
 
 Initialize a variable. To include multiple parameters, use the flag multiple times. If the same variable name is supplied multiple times, only the last value will be used. The `--param` flag will also overwrite values loaded via the `--env` flag.
 
-### `--quiet` - Parameter
+### `--quiet` - Quiet Mode
 
 Alias: `-q`. `bool`. Optional
 
