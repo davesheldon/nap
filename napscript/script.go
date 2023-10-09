@@ -156,11 +156,11 @@ type VmHttpRequest struct {
 }
 
 type VmHttpResponse struct {
-	StatusCode int                 `json:"statusCode"`
-	Status     string              `json:"status"`
-	Body       string              `json:"body"`
-	JsonBody   interface{}         `json:"jsonBody"`
-	Headers    map[string][]string `json:"headers"`
+	StatusCode int                      `json:"statusCode"`
+	Status     string                   `json:"status"`
+	Body       string                   `json:"body"`
+	JsonBody   interface{}              `json:"jsonBody"`
+	Headers    map[string][]interface{} `json:"headers"`
 	ElapsedMs  int64
 }
 
@@ -190,11 +190,14 @@ func MapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 		defer result.HttpResponse.Body.Close()
 
 		// TODO: support multiple header values per key
-		data.Response.Headers = map[string][]string{}
+		data.Response.Headers = map[string][]any{}
 
 		for k, v := range result.HttpResponse.Header {
 			if len(v) > 0 {
-				data.Response.Headers[k] = v
+				data.Response.Headers[k] = make([]any, len(v))
+				for i, val := range v {
+					data.Response.Headers[k][i] = val
+				}
 
 				if k == "Content-Type" && strings.Contains(v[0], "json") {
 					err = json.Unmarshal(bodyBytes, &data.Response.JsonBody)

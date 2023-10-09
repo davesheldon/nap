@@ -18,6 +18,8 @@ capture.go - this file contains logic for evaluating captures
 package napcap
 
 import (
+	"fmt"
+
 	"github.com/davesheldon/nap/napcontext"
 	"github.com/davesheldon/nap/napquery"
 	"github.com/davesheldon/nap/napscript"
@@ -34,6 +36,11 @@ func CaptureQuery(variable string, query string, ctx *napcontext.Context, vmData
 		return err
 	}
 
-	ctx.EnvironmentVariables[variable] = actual
+	if len(actual) > 0 {
+		ctx.EnvironmentVariables[variable] = fmt.Sprint(actual[0])
+	}
+
+	// todo: deal with multiple return values
+
 	return nil
 }

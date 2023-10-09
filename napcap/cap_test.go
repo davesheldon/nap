@@ -13,22 +13,22 @@ func TestCaptures(t *testing.T) {
 	tests := map[string]struct {
 		variable  string
 		ctx       *napcontext.Context
-		queryFunc func(query string, vmData *napscript.VmHttpData) (string, error)
+		queryFunc func(query string, vmData *napscript.VmHttpData) ([]any, error)
 	}{
 		"set new variable": {
 			variable:  "test1",
 			ctx:       napcontext.New("", nil, make(map[string]string), nil, true),
-			queryFunc: mockQuery("value1", nil),
+			queryFunc: mockQuery([]any{"value1"}, nil),
 		},
 		"overwrite new variable": {
 			variable:  "test1",
 			ctx:       napcontext.New("", nil, map[string]string{"test1": "value1"}, nil, true),
-			queryFunc: mockQuery("value2", nil),
+			queryFunc: mockQuery([]any{"value2"}, nil),
 		},
 		"error": {
 			variable:  "test1",
 			ctx:       napcontext.New("", nil, make(map[string]string), nil, true),
-			queryFunc: mockQuery("", fmt.Errorf("mock error")),
+			queryFunc: mockQuery(nil, fmt.Errorf("mock error")),
 		},
 	}
 
@@ -38,7 +38,7 @@ func TestCaptures(t *testing.T) {
 			queryResult, queryError := test.queryFunc("", nil)
 			err := napcap.CaptureQuery(test.variable, "", test.ctx, nil)
 
-			if err == nil && queryError == nil && test.ctx.EnvironmentVariables[test.variable] != queryResult {
+			if err == nil && queryError == nil && test.ctx.EnvironmentVariables[test.variable] != queryResult[0] {
 				t.Errorf("Expected %s=%s, got %s", test.variable, queryResult, test.ctx.EnvironmentVariables[test.variable])
 			} else if queryError != nil && err == nil {
 				t.Errorf("Expected error, got nil")
@@ -49,8 +49,8 @@ func TestCaptures(t *testing.T) {
 	}
 }
 
-func mockQuery(mockResult string, mockError error) func(query string, vmData *napscript.VmHttpData) (string, error) {
-	q := func(query string, vmData *napscript.VmHttpData) (string, error) {
+func mockQuery(mockResult []any, mockError error) func(query string, vmData *napscript.VmHttpData) ([]any, error) {
+	q := func(query string, vmData *napscript.VmHttpData) ([]any, error) {
 		return mockResult, mockError
 	}
 

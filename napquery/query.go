@@ -22,51 +22,68 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PaesslerAG/jsonpath"
-
+	"github.com/AsaiYusuke/jsonpath"
 	"github.com/davesheldon/nap/napscript"
+	jsoniter "github.com/json-iterator/go"
 )
 
-func Eval(query string, vmData *napscript.VmHttpData) (string, error) {
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+func evalJsonPath(expression string, data interface{}) ([]interface{}, error) {
+	var config = jsonpath.Config{}
+	config.SetAggregateFunction(`length`, func(params []interface{}) (interface{}, error) {
+		if params == nil {
+			return nil, nil
+		}
+		return len(params), nil
+	})
+	return jsonpath.Retrieve(expression, data, config)
+}
+
+var (
+	EvalJsonPath = evalJsonPath
+)
+
+func Eval(query string, vmData *napscript.VmHttpData) ([]any, error) {
 	if vmData == nil || vmData.Response == nil {
 		// return empty here instead of erroring in case this assert is testing for absence of a value
-		return "", nil
+		return nil, nil
 	}
 
 	jsonExpression, isJsonPath := strings.CutPrefix(query, "jsonpath ")
 	if isJsonPath {
 		body := vmData.Response.JsonBody
-		value, err := jsonpath.Get(jsonExpression, body)
+		value, err := EvalJsonPath(jsonExpression, body)
 
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return fmt.Sprint(value), nil
+		return value, nil
 	}
 
 	header, isHeader := strings.CutPrefix(query, "header ")
 	if isHeader {
 		if vmData.Response.Headers == nil {
-			return "", nil
+			return nil, nil
 		}
 
 		value := vmData.Response.Headers[header]
 
-		return strings.Join(value, ","), nil
+		return value, nil
 	}
 
 	if query == "status" {
-		return strconv.Itoa(vmData.Response.StatusCode), nil
+		return []any{strconv.Itoa(vmData.Response.StatusCode)}, nil
 	}
 
 	if query == "duration" {
-		return strconv.FormatInt(vmData.Response.ElapsedMs, 10), nil
+		return []any{strconv.FormatInt(vmData.Response.ElapsedMs, 10)}, nil
 	}
 
 	if query == "body" {
-		return vmData.Response.Body, nil
+		return []any{vmData.Response.Body}, nil
 	}
 
-	return "", fmt.Errorf("Query \"%s\" not recognized.", query)
+	return nil, fmt.Errorf("Query \"%s\" not recognized.", query)
 }
