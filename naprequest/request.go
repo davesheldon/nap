@@ -96,9 +96,14 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Request, error) {
 var expr = fmt.Sprintf("^(.+) (%s) \"?(.+)\"?$", strings.Join(napassert.GetPredicates(), "|"))
 var re = regexp.MustCompile(expr)
 
-func (request *Request) GetAsserts() ([]*napassert.Assert, error) {
+func (request *Request) GetAsserts(ctx *napcontext.Context) ([]*napassert.Assert, error) {
 	var asserts []*napassert.Assert = make([]*napassert.Assert, 0)
 	for _, v := range request.Asserts {
+
+		for k, val := range ctx.EnvironmentVariables {
+			variable := fmt.Sprintf("${%s}", k)
+			v = strings.ReplaceAll(v, variable, val)
+		}
 		matches := re.FindStringSubmatch(v)
 		if len(matches) < 4 {
 			return nil, fmt.Errorf("Could not parse assert: %s", v)

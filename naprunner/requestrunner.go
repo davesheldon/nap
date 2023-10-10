@@ -112,7 +112,7 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 		}
 	}
 
-	asserts, err := request.GetAsserts()
+	asserts, err := request.GetAsserts(ctx)
 	if err != nil {
 		result.Error = err
 		return result
