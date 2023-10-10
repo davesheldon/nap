@@ -23,6 +23,8 @@ env: # optional; variables to set before running this routine
 steps: # array; at least one step is required. 
   - run: ./request-1.yml # required; the path to the target to run
     iterations: "./env-*.yml" # optional; path(s) to variable iterations to run for this step.
+    env: # optional; variables to set before running this step
+      myvar: myval
 ```
 
 ## Properties
@@ -43,7 +45,7 @@ A name used to identify the routine. This is used in any logs/output to refer to
 
 `object` Optional.
 
-A set of variables to set before running the steps in this routine. Any number of variables may be included as YAML properties and values.
+A set of variables to apply before running the steps in this routine. Any number of variables may be included as YAML properties and values.
 
 ### `steps` - Steps to run
 
@@ -62,6 +64,12 @@ The path to the request or subroutine to execute.
 `string | array`. Optional. 
 
 One or more paths or globs pointing to environment files to load and iterate over for this step. If specified, the step will be run once for each environment file found. Each iteration is loaded on top of the existing set of variables. If no iterations are found then the step will run once with the normal environment.
+
+### `steps[].env` - Step Environment Variables
+
+`object`. Optional. 
+
+A set of variables to apply before running this step in this routine. Any number of variables may be included as YAML properties and values. Variables set on earlier steps will also apply to later steps in the same routine.
 
 ## Requests
 

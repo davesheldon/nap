@@ -39,6 +39,13 @@ type Routine struct {
 type RoutineStep struct {
 	Run        string
 	Iterations interface{}
+	Env        map[string]string
+}
+
+func (step *RoutineStep) SetupContext(ctx *napcontext.Context) {
+	for k, v := range step.Env {
+		ctx.EnvironmentVariables[k] = v
+	}
 }
 
 func (step *RoutineStep) GetIterations(ctx *napcontext.Context) ([]*napcontext.Context, error) {

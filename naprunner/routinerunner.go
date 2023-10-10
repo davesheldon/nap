@@ -48,6 +48,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 	}
 
 	for _, step := range routine.Steps {
+		step.SetupContext(ctx)
 		var stepResult *naproutine.RoutineStepResult
 		stepResult = nil
 
