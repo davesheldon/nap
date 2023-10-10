@@ -22,7 +22,7 @@ env: # optional; variables to set before running this routine
   myvar: myval
 steps: # array; at least one step is required. 
   - run: ./request-1.yml # required; the path to the target to run
-    iterations: # optional; path(s) to variable iterations to run for this step.
+    iterations: "./env-*.yml" # optional; path(s) to variable iterations to run for this step.
 ```
 
 ## Properties
