@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/davesheldon/nap/naputil"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
@@ -62,7 +63,7 @@ func (old *Context) Clone(workingDirectory string) *Context {
 	ctx := new(Context)
 
 	ctx.Environments = old.Environments
-	ctx.EnvironmentVariables = old.EnvironmentVariables
+	ctx.EnvironmentVariables = naputil.CloneMap(old.EnvironmentVariables)
 	ctx.ScriptContext = newScriptContext()
 	ctx.WorkingDirectory = workingDirectory
 	ctx.progress = old.progress

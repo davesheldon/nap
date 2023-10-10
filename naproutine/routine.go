@@ -32,6 +32,7 @@ import (
 
 type Routine struct {
 	Name  string
+	Env   map[string]string
 	Steps []*RoutineStep
 }
 
@@ -129,6 +130,12 @@ func LoadFromPath(path string, ctx *napcontext.Context) (*Routine, error) {
 
 	if routine.Name == "" {
 		routine.Name = path
+	}
+
+	if routine.Env != nil {
+		for k, v := range routine.Env {
+			ctx.EnvironmentVariables[k] = v
+		}
 	}
 
 	return routine, nil

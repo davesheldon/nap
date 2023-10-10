@@ -18,6 +18,8 @@ The routine is Nap's most basic building block.
 ```yml
 kind: routine # required; defines the document as a routine
 name: my routine # optional; used to identify this routine
+env: # optional; variables to set before running this routine
+  myvar: myval
 steps: # array; at least one step is required. 
   - run: ./request-1.yml # required; the path to the target to run
     iterations: # optional; path(s) to variable iterations to run for this step.
@@ -36,6 +38,12 @@ Defines the document type as a routine.
 `string` Optional.
 
 A name used to identify the routine. This is used in any logs/output to refer to the routine. If a name isn't given, its file-name is used instead.
+
+### `env` - Environment Variables
+
+`object` Optional.
+
+A set of variables to set before running the steps in this routine. Any number of variables may be included as YAML properties and values.
 
 ### `steps` - Steps to run
 
