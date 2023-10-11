@@ -1,6 +1,6 @@
 remote_theme: just-the-docs/just-the-docs@v0.6.2
 title: Nap
-description: Fast, flexible HTTP test automation
+description: Lightning-Fast, Accurate, Open Source API Test Automation
 baseUrl: /
 url: https://naprun.dev
 repository: davesheldon/nap
