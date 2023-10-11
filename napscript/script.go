@@ -21,6 +21,7 @@ package napscript
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
@@ -153,6 +154,7 @@ type VmHttpRequest struct {
 	Verb    string            `json:"verb"`
 	Body    interface{}       `json:"body"`
 	Headers map[string]string `json:"headers"`
+	Cookies map[string]string `json:"cookies"`
 }
 
 type VmHttpResponse struct {
@@ -161,6 +163,7 @@ type VmHttpResponse struct {
 	Body       string                   `json:"body"`
 	JsonBody   interface{}              `json:"jsonBody"`
 	Headers    map[string][]interface{} `json:"headers"`
+	Cookies    map[string]*http.Cookie  `json:"cookies"`
 	ElapsedMs  int64
 }
 
@@ -172,6 +175,7 @@ func MapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 	data.Request.Verb = result.Request.Verb
 	data.Request.Body = result.Request.Body
 	data.Request.Headers = result.Request.Headers
+	data.Request.Cookies = result.Request.Cookies
 
 	if result.HttpResponse != nil {
 		data.Response = new(VmHttpResponse)
@@ -189,7 +193,11 @@ func MapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 
 		defer result.HttpResponse.Body.Close()
 
-		// TODO: support multiple header values per key
+		data.Response.Cookies = map[string]*http.Cookie{}
+		for _, v := range result.HttpResponse.Cookies() {
+			data.Response.Cookies[v.Name] = v
+		}
+
 		data.Response.Headers = map[string][]any{}
 
 		for k, v := range result.HttpResponse.Header {

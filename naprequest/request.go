@@ -34,6 +34,7 @@ type Request struct {
 	Verb                  string
 	TimeoutSeconds        int `yaml:"timeoutSeconds"`
 	Headers               map[string]string
+	Cookies               map[string]string
 	Body                  interface{}
 	GraphQL               *GraphQLOptions `yaml:"graphql"`
 	PreRequestScript      string          `yaml:"preRequestScript"`

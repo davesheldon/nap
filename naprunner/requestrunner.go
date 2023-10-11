@@ -65,7 +65,7 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 
 	result.StartTime = time.Now()
 
-	response, err := executeHttp(request, filepath.Dir(runPath))
+	response, err := executeHttp(request, ctx, filepath.Dir(runPath))
 
 	result.HttpResponse = response
 	if err != nil {
@@ -144,7 +144,7 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 	return result
 }
 
-func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response, error) {
+func executeHttp(r *naprequest.Request, ctx *napcontext.Context, workingDirectory string) (*http.Response, error) {
 	client := &http.Client{}
 
 	if r.TimeoutSeconds > 0 {
@@ -228,6 +228,18 @@ func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response
 		request.Header.Add(k, v)
 	}
 
+	if len(r.Cookies)+len(ctx.Cookies) > 0 {
+		cookies := make([]*http.Cookie, 0)
+		for k, v := range r.Cookies {
+			cookies = append(cookies, &http.Cookie{Name: k, Value: v})
+		}
+		cookies = append(cookies, ctx.Cookies...)
+
+		for _, v := range cookies {
+			request.AddCookie(v)
+		}
+	}
+
 	if r.Verbose {
 		fmt.Println("REQUEST:")
 		dump, err := httputil.DumpRequestOut(request, true)
@@ -240,6 +252,7 @@ func executeHttp(r *naprequest.Request, workingDirectory string) (*http.Response
 	}
 
 	response, err := client.Do(request)
+	ctx.Cookies = append(ctx.Cookies, response.Cookies()...)
 
 	if r.Verbose {
 		fmt.Println("RESPONSE:")

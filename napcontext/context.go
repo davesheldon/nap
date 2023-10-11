@@ -19,6 +19,7 @@ package napcontext
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/davesheldon/nap/naputil"
@@ -31,6 +32,7 @@ type Context struct {
 	EnvironmentVariables map[string]string
 	WorkingDirectory     string
 	ScriptContext        *ScriptContext
+	Cookies              []*http.Cookie
 
 	progress  *mpb.Progress
 	waitGroup *sync.WaitGroup
@@ -42,7 +44,8 @@ func New(workingDirectory string, environments []string, environmentVariables ma
 
 	ctx.WorkingDirectory = workingDirectory
 	ctx.Environments = environments
-	ctx.EnvironmentVariables = make(map[string]string)
+	ctx.EnvironmentVariables = map[string]string{}
+	ctx.Cookies = []*http.Cookie{}
 
 	for k, v := range environmentVariables {
 		ctx.EnvironmentVariables[k] = v
@@ -69,6 +72,7 @@ func (old *Context) Clone(workingDirectory string) *Context {
 	ctx.progress = old.progress
 	ctx.waitGroup = old.waitGroup
 	ctx.quiet = old.quiet
+	ctx.Cookies = append([]*http.Cookie{}, old.Cookies...)
 
 	return ctx
 }

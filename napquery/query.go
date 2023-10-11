@@ -73,6 +73,46 @@ func Eval(query string, vmData *napscript.VmHttpData) ([]any, error) {
 		return value, nil
 	}
 
+	cookie, isCookie := strings.CutPrefix(query, "cookie ")
+	if isCookie {
+		if strings.Contains(cookie, "[") {
+			cookieParts := strings.Split(cookie, "[")
+
+			targetCookie, ok := vmData.Response.Cookies[strings.TrimSpace(cookieParts[0])]
+			if !ok {
+				return []any{}, nil
+			}
+
+			cookieAttr := strings.Replace(strings.TrimSpace(cookieParts[1]), "]", "", 0)
+			switch cookieAttr {
+			case "Value":
+				return []any{targetCookie.Value}, nil
+			case "Expires":
+				return []any{targetCookie.RawExpires}, nil
+			case "Max-Age":
+				return []any{targetCookie.MaxAge}, nil
+			case "Domain":
+				return []any{targetCookie.Domain}, nil
+			case "Path":
+				return []any{targetCookie.Path}, nil
+			case "Secure":
+				return []any{targetCookie.Secure}, nil
+			case "HttpOnly":
+				return []any{targetCookie.HttpOnly}, nil
+			case "SameSite":
+				return []any{targetCookie.SameSite}, nil
+			}
+
+		} else {
+			targetCookie, ok := vmData.Response.Cookies[cookie]
+			if !ok {
+				return []any{}, nil
+			}
+
+			return []any{targetCookie.Value}, nil
+		}
+	}
+
 	if query == "status" {
 		return []any{strconv.Itoa(vmData.Response.StatusCode)}, nil
 	}

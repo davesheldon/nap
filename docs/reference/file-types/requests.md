@@ -23,6 +23,8 @@ verb: GET # optional; HTTP request method
 timeoutSeconds: 0 # optional; execution timeout
 headers: # optional; HTTP request headers
   Accept: application/json # optional; example of a header
+cookies: # optional; HTTP request cookies
+  myCookie: myValue # optiona; example of a cookie
 body: | # optional; HTTP request body
   {
     "myvar": "myval"
@@ -92,6 +94,12 @@ Execution timeout for the request. If the request exceeds this timeout it will b
 `object`. Optional.
 
 A set of HTTP request headers to include. Any number of headers may be included as YAML properties.
+
+### `cookies` - HTTP request cookies
+
+`object`. Optional.
+
+A set of HTTP cookies to include. Any number of cookies and values may be included as YAML properties.
 
 ### `body` - HTTP request body
 
