@@ -30,6 +30,10 @@ func TestQueries(t *testing.T) {
 			query:       "jsonpath $.results.length()",
 			expectation: []any{6},
 		},
+		"jsonpath - length, zero results": {
+			query:       "jsonpath $.results[?(@.name == \"nothing\")].length()",
+			expectation: []any{},
+		},
 	}
 
 	for name, test := range tests {
@@ -37,6 +41,8 @@ func TestQueries(t *testing.T) {
 			actual, err := napquery.Eval(test.query, data)
 			if err != nil {
 				t.Errorf("%T: %e", err, err)
+			} else if len(actual) == len(test.expectation) && len(test.expectation) == 0 {
+
 			} else if actual[0] != test.expectation[0] {
 				t.Errorf("Expected %v, got %v", test.expectation, actual)
 			}

@@ -127,13 +127,7 @@ func runRequest(ctx *napcontext.Context, runPath string, request *naprequest.Req
 			return result
 		}
 
-		var testVal interface{} = nil
-
-		if actual != nil && len(actual) > 0 {
-			testVal = actual[0]
-		}
-
-		err = napassert.Execute(v, testVal)
+		err = napassert.Execute(v, actual)
 
 		if err != nil {
 			result.Error = err

@@ -37,12 +37,18 @@ func evalJsonPath(expression string, data interface{}) ([]interface{}, error) {
 		}
 		return len(params), nil
 	})
-	return jsonpath.Retrieve(expression, data, config)
-}
+	output, err := jsonpath.Retrieve(expression, data, config)
 
-var (
-	EvalJsonPath = evalJsonPath
-)
+	// return empty for certain types of errors
+	if err != nil {
+		switch err.(type) {
+		case jsonpath.ErrorMemberNotExist:
+			return []interface{}{}, nil
+		}
+	}
+
+	return output, err
+}
 
 func Eval(query string, vmData *napscript.VmHttpData) ([]any, error) {
 	if vmData == nil || vmData.Response == nil {
@@ -53,7 +59,7 @@ func Eval(query string, vmData *napscript.VmHttpData) ([]any, error) {
 	jsonExpression, isJsonPath := strings.CutPrefix(query, "jsonpath ")
 	if isJsonPath {
 		body := vmData.Response.JsonBody
-		value, err := EvalJsonPath(jsonExpression, body)
+		value, err := evalJsonPath(jsonExpression, body)
 
 		if err != nil {
 			return nil, err

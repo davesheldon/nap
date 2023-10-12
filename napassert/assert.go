@@ -57,7 +57,7 @@ func NewAssert(query string, predicate string, expectation string) *Assert {
 	return assert
 }
 
-func Execute(assert *Assert, actual interface{}) error {
+func Execute(assert *Assert, actual []any) error {
 	query := assert.Query
 	predicate := assert.Predicate
 	expectation := assert.Expectation
@@ -71,11 +71,27 @@ func Execute(assert *Assert, actual interface{}) error {
 	// init result as a failure
 	result := !desiredResult
 
+	var compareValue any = ""
+
+	if len(actual) > 0 {
+		compareValue = actual[0]
+	}
+
 	switch basePredicate {
 	case "==":
-		result = actual == expectation
-		if result != desiredResult {
-			floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		// special case until we implement json parsing of expectations
+		if expectation == "[]" && len(actual) == 0 {
+			result = true
+			break
+		}
+
+		result = compareValue == expectation
+
+		if !result {
+			if compareValue == "" {
+				compareValue = 0
+			}
+			floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 			if err != nil {
 				break
 			}
@@ -88,9 +104,19 @@ func Execute(assert *Assert, actual interface{}) error {
 			result = floatActual == floatExpectation
 		}
 	case "!=":
-		result = actual != expectation
-		if result != desiredResult {
-			floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		// special case until we implement json parsing of expectations
+		if expectation == "[]" && len(actual) == 0 {
+			result = false
+			break
+		}
+
+		result = compareValue != expectation
+
+		if result {
+			if compareValue == "" {
+				compareValue = 0
+			}
+			floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 			if err != nil {
 				break
 			}
@@ -103,7 +129,10 @@ func Execute(assert *Assert, actual interface{}) error {
 			result = floatActual != floatExpectation
 		}
 	case "<":
-		floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		if compareValue == "" {
+			compareValue = 0
+		}
+		floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 		if err != nil {
 			break
 		}
@@ -114,7 +143,10 @@ func Execute(assert *Assert, actual interface{}) error {
 
 		result = floatActual < floatAssertValue
 	case "<=":
-		floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		if compareValue == "" {
+			compareValue = 0
+		}
+		floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 		if err != nil {
 			break
 		}
@@ -125,7 +157,10 @@ func Execute(assert *Assert, actual interface{}) error {
 
 		result = floatActual <= floatAssertValue
 	case ">":
-		floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		if compareValue == "" {
+			compareValue = 0
+		}
+		floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 		if err != nil {
 			break
 		}
@@ -136,7 +171,10 @@ func Execute(assert *Assert, actual interface{}) error {
 
 		result = floatActual > floatAssertValue
 	case ">=":
-		floatActual, err := strconv.ParseFloat(fmt.Sprint(actual), 64)
+		if compareValue == "" {
+			compareValue = 0
+		}
+		floatActual, err := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 		if err != nil {
 			break
 		}
@@ -148,13 +186,13 @@ func Execute(assert *Assert, actual interface{}) error {
 		result = floatActual >= floatAssertValue
 	case "matches":
 		re := regexp.MustCompile(expectation)
-		result = re.MatchString(fmt.Sprint(actual))
+		result = re.MatchString(fmt.Sprint(compareValue))
 	case "contains":
-		result = strings.Contains(fmt.Sprint(actual), expectation)
+		result = strings.Contains(fmt.Sprint(compareValue), expectation)
 	case "startswith":
-		result = strings.HasPrefix(fmt.Sprint(actual), expectation)
+		result = strings.HasPrefix(fmt.Sprint(compareValue), expectation)
 	case "endswith":
-		result = strings.HasSuffix(fmt.Sprint(actual), expectation)
+		result = strings.HasSuffix(fmt.Sprint(compareValue), expectation)
 	case "in":
 		validValues := []interface{}{}
 		data := []byte(expectation)
@@ -167,13 +205,16 @@ func Execute(assert *Assert, actual interface{}) error {
 
 		for _, val := range validValues {
 			strVal := fmt.Sprint(val)
-			in = strVal == actual
+			in = strVal == compareValue
 
 			if !in {
+				if compareValue == "" {
+					compareValue = 0
+				}
 
 				// string didn't compare, let's parse to float and try again
 				floatVal, err := strconv.ParseFloat(strVal, 64)
-				floatActual, err2 := strconv.ParseFloat(fmt.Sprint(actual), 64)
+				floatActual, err2 := strconv.ParseFloat(fmt.Sprint(compareValue), 64)
 
 				if err == nil && err2 == nil {
 					in = floatVal == floatActual
