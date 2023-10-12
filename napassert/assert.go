@@ -232,7 +232,7 @@ func Execute(assert *Assert, actual []any) error {
 	}
 
 	if result != desiredResult {
-		return fmt.Errorf("Assert failed \"%s => %s %s %s\"", query, actual, predicate, expectation)
+		return fmt.Errorf("Assert failed \"%s => %s %s %s\"", query, fmt.Sprint(actual), predicate, expectation)
 	}
 
 	return nil
