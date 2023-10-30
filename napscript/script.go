@@ -194,8 +194,11 @@ func MapVmHttpData(result *naprequest.RequestResult) (*VmHttpData, error) {
 		defer result.HttpResponse.Body.Close()
 
 		data.Response.Cookies = map[string]*http.Cookie{}
-		for _, v := range result.HttpResponse.Cookies() {
-			data.Response.Cookies[v.Name] = v
+		responseCookies := result.HttpResponse.Cookies()
+		if responseCookies != nil && len(responseCookies) > 0 {
+			for _, v := range result.HttpResponse.Cookies() {
+				data.Response.Cookies[v.Name] = v
+			}
 		}
 
 		data.Response.Headers = map[string][]any{}

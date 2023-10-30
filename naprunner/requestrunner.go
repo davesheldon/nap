@@ -222,15 +222,20 @@ func executeHttp(r *naprequest.Request, ctx *napcontext.Context, workingDirector
 		request.Header.Add(k, v)
 	}
 
-	if len(r.Cookies)+len(ctx.Cookies) > 0 {
+	if r.Cookies != nil && (len(r.Cookies)+len(ctx.Cookies) > 0) {
 		cookies := make([]*http.Cookie, 0)
 		for k, v := range r.Cookies {
 			cookies = append(cookies, &http.Cookie{Name: k, Value: v})
 		}
-		cookies = append(cookies, ctx.Cookies...)
+
+		if ctx.Cookies != nil {
+			cookies = append(cookies, ctx.Cookies...)
+		}
 
 		for _, v := range cookies {
-			request.AddCookie(v)
+			if v != nil {
+				request.AddCookie(v)
+			}
 		}
 	}
 
@@ -238,7 +243,6 @@ func executeHttp(r *naprequest.Request, ctx *napcontext.Context, workingDirector
 		fmt.Println("REQUEST:")
 		dump, err := httputil.DumpRequestOut(request, true)
 		if err == nil {
-
 			fmt.Println(string(dump))
 		} else {
 			fmt.Println(err)
@@ -246,7 +250,16 @@ func executeHttp(r *naprequest.Request, ctx *napcontext.Context, workingDirector
 	}
 
 	response, err := client.Do(request)
-	ctx.Cookies = append(ctx.Cookies, response.Cookies()...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	responseCookies := response.Cookies()
+
+	if responseCookies != nil && len(responseCookies) > 0 {
+		ctx.Cookies = append(ctx.Cookies, response.Cookies()...)
+	}
 
 	if r.Verbose {
 		fmt.Println("RESPONSE:")
@@ -256,10 +269,6 @@ func executeHttp(r *naprequest.Request, ctx *napcontext.Context, workingDirector
 		} else {
 			fmt.Println(err)
 		}
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return response, nil
