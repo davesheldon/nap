@@ -51,7 +51,7 @@ There are two ways to get started using Nap.
 
 You can download directly from the dist folder on Github, or use one of the quick download buttons:
 
-[Download for Windows (x64) - v0.4.6](https://github.com/davesheldon/nap/releases/download/v0.4.6/nap.exe){: .btn .btn-primary} [Other Platforms (View All)](https://github.com/davesheldon/nap/tree/main/dist/){: .btn}
+[Download for Windows (x64) - v0.4.7](https://github.com/davesheldon/nap/releases/download/v0.4.7/nap.exe){: .btn .btn-primary} [Other Platforms (View All)](https://github.com/davesheldon/nap/tree/main/dist/){: .btn}
 
 Once downloaded, add nap's location into your `$PATH` for convenience.
 
