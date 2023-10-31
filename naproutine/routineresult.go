@@ -33,6 +33,16 @@ type RoutineResult struct {
 	Errors      []error
 }
 
+type ResultStats struct {
+	Passing int
+	Total   int
+}
+
+type RunStats struct {
+	StatsByType map[string]*ResultStats
+	Totals      ResultStats
+}
+
 func (r *RoutineResult) GetElapsedMs() int64 {
 	return r.EndTime.Sub(r.StartTime).Milliseconds()
 }
@@ -73,22 +83,39 @@ func (result *RoutineResult) Print(prefix string, context *napcontext.Context) {
 	}
 }
 
-func (result *RoutineResult) GetPassFailCounts(parents ...*RoutineResult) (passed int, failed int) {
-	passed = 0
-	failed = 0
+func (result *RoutineResult) GetRunStats(parents ...*RoutineResult) *RunStats {
+	runStats := new(RunStats)
+	runStats.StatsByType = make(map[string]*ResultStats)
 
 	for _, v := range result.StepResults {
 		if v.SubroutineResult != nil {
-			subPassed, subFailed := v.SubroutineResult.GetPassFailCounts(append(parents, result)...)
-			passed += subPassed
-			failed += subFailed
+			subRunStats := v.SubroutineResult.GetRunStats(append(parents, result)...)
+
+			for runType, subStats := range subRunStats.StatsByType {
+				stats, ok := runStats.StatsByType[runType]
+				if ok {
+					stats.Passing += subStats.Passing
+					stats.Total += subStats.Total
+				} else {
+					runStats.StatsByType[runType] = new(ResultStats)
+					runStats.StatsByType[runType].Passing = subStats.Passing
+					runStats.StatsByType[runType].Total = subStats.Total
+				}
+			}
 
 			// first routine is system-generated, don't count it
 			if len(parents) > 0 {
-				if subPassed > 0 {
-					passed += 1
+				_, ok := runStats.StatsByType["Subroutines"]
+				if !ok {
+					runStats.StatsByType["Subroutines"] = new(ResultStats)
+				}
+
+				// any failure means the routine failed
+				if subRunStats.Totals.Total > subRunStats.Totals.Passing {
+					runStats.StatsByType["Subroutines"].Total += 1
 				} else {
-					failed += 1
+					runStats.StatsByType["Subroutines"].Passing += 1
+					runStats.StatsByType["Subroutines"].Total += 1
 				}
 			}
 
@@ -96,26 +123,53 @@ func (result *RoutineResult) GetPassFailCounts(parents ...*RoutineResult) (passe
 		}
 
 		if v.RequestResult != nil {
+			_, ok := runStats.StatsByType["Requests"]
+			if !ok {
+				runStats.StatsByType["Requests"] = new(ResultStats)
+			}
 
 			if v.RequestResult.Error != nil {
-				failed += 1
+				runStats.StatsByType["Requests"].Total += 1
 			} else {
-				passed += 1
+				runStats.StatsByType["Requests"].Total += 1
+				runStats.StatsByType["Requests"].Passing += 1
 			}
 			continue
 		}
 
 		if v.ScriptResult != nil {
-			if v.ScriptResult.Error != nil {
-				failed += 1
-			} else {
-				passed += 1
+			_, ok := runStats.StatsByType["Scripts"]
+			if !ok {
+				runStats.StatsByType["Scripts"] = new(ResultStats)
 			}
+
+			if v.ScriptResult.Error != nil {
+				runStats.StatsByType["Scripts"].Total += 1
+			} else {
+				runStats.StatsByType["Scripts"].Total += 1
+				runStats.StatsByType["Scripts"].Passing += 1
+			}
+			continue
+		}
+
+		if len(v.Errors) > 0 {
+			// maybe file not found or type not known
+			_, ok := runStats.StatsByType["Unknown"]
+			if !ok {
+				runStats.StatsByType["Unknown"] = new(ResultStats)
+			}
+
+			runStats.StatsByType["Unknown"].Total += 1
 			continue
 		}
 	}
 
-	return passed, failed
+	for _, v := range runStats.StatsByType {
+		runStats.Totals.Passing += v.Passing
+		runStats.Totals.Total += v.Total
+	}
+
+	return runStats
 }
 
 func (stepResult *RoutineStepResult) getName() string {

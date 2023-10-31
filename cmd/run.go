@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -70,15 +71,33 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		passed, failed := routineResult.GetPassFailCounts()
+		runStats := routineResult.GetRunStats()
 
-		if failed == 0 {
-			fmt.Printf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+		runTypes := make([]string, 0, len(runStats.StatsByType))
+
+		for k := range runStats.StatsByType {
+			runTypes = append(runTypes, k)
+		}
+		sort.Strings(runTypes)
+
+		var statsPerTypeOutput string
+
+		for _, runType := range runTypes {
+			typeStats := runStats.StatsByType[runType]
+			statsPerTypeOutput += fmt.Sprintf("%s:\t%d/%d\n", runType, typeStats.Passing, typeStats.Total)
+		}
+
+		statsPerTypeOutput += fmt.Sprintf("Total:\t\t%d/%d", runStats.Totals.Passing, runStats.Totals.Total)
+
+		if runStats.Totals.Total == runStats.Totals.Passing {
+			fmt.Printf("\n%s\n\nSUCCESS! Run finished in %dms.\n", statsPerTypeOutput, end.Sub(start).Milliseconds())
 			return nil
 		} else {
 			cmd.SilenceUsage = true
-			return fmt.Errorf("Run finished in %dms. %d/%d succeeded.", end.Sub(start).Milliseconds(), passed, passed+failed)
+			fmt.Printf("\n%s\n\n", statsPerTypeOutput)
+			return fmt.Errorf("Run failed after %dms.", end.Sub(start).Milliseconds())
 		}
+
 	},
 }
 

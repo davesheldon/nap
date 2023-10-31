@@ -58,7 +58,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			stepResult = naproutine.StepError(step, fmt.Errorf("file doesn't exist: %s", stepPath))
 			result.StepResults = append(result.StepResults, stepResult)
 			if ch != nil {
-				ctx.ProgressIncrement(progress)
+				ctx.ProgressCancel(progress)
 			}
 			break
 		}
@@ -69,7 +69,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			stepResult = naproutine.StepError(step, err)
 			result.StepResults = append(result.StepResults, stepResult)
 			if ch != nil {
-				ctx.ProgressIncrement(progress)
+				ctx.ProgressCancel(progress)
 			}
 			break
 		}
@@ -80,7 +80,7 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 			stepResult = naproutine.StepError(step, err)
 			result.StepResults = append(result.StepResults, stepResult)
 			if ch != nil {
-				ctx.ProgressIncrement(progress)
+				ctx.ProgressCancel(progress)
 			}
 			break
 		}
@@ -120,6 +120,10 @@ func runRoutine(ctx *napcontext.Context, routine *naproutine.Routine, parentStep
 
 			if stepResult == nil {
 				stepResult = naproutine.StepError(step, fmt.Errorf("could not run path: %s", stepPath))
+				if ch != nil {
+					ctx.ProgressCancel(progress)
+				}
+				break
 			}
 
 			result.StepResults = append(result.StepResults, stepResult)

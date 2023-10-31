@@ -115,6 +115,15 @@ func (ctx *Context) ProgressIncrement(progress *Progress) {
 	}
 }
 
+func (ctx *Context) ProgressCancel(progress *Progress) {
+	if ctx.quiet {
+		return
+	}
+	progress.bar.Abort(false)
+	progress.bar.Wait()
+	defer ctx.waitGroup.Done()
+}
+
 func (ctx *Context) Complete() {
 	if ctx.quiet {
 		return
