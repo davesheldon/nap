@@ -65,6 +65,6 @@ $ go install github.com/davesheldon/nap@latest
 
 Once you have Nap installed, go read about [The Basics](/the-basics) to start writing your first test.
 
-# Credits
+## Credits
 
 Nap was heavily inspired by another HTTP CLI project called [Hurl](https://hurl.dev/). If you don't find Nap useful, you may like Hurl instead.
